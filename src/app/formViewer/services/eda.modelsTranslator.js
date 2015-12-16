@@ -4,7 +4,7 @@
  *  ------------------------------------------------------
  *
  *  this service helps translating easy form configuration model to angualr formly model
- * 
+ *
  * ——————————————————————————————————————————————
  * MIT (2015) - Erwan Datin (MacKentoch)
  * https://github.com/MacKentoch/easyFormGenerator
@@ -12,80 +12,80 @@
 **/
 ;(function(){
 	'use strict';
-	
+
 	angular
 		.module('eda.modelsTranslator.Service', [])
 		.factory('modelsTranslator', controllerModalProxy);
 
 		controllerModalProxy.$inject = [];
 		function controllerModalProxy(){
-			
+
 			var service = {
 				initNyaSelect 													: initNyaSelect,
 				getControlsDefinition 									: getControlsDefinition,
 				refreshControlFormlyExpressionProperties: refreshControlFormlyExpressionProperties,
 				refreshControlFormlyValidators					: refreshControlFormlyValidators,
 				refreshControlFormlyValidation					: refreshControlFormlyValidation,
-				
+
         initConfigurationEditFromScratch 				: initConfigurationEditFromScratch,
         bindConfigurationLines           				: bindConfigurationLines,
-        applyConfigurationToformlyModel  				: applyConfigurationToformlyModel				
+        applyConfigurationToformlyModel  				: applyConfigurationToformlyModel
 			};
-			
+
 			return service;
-			
-		}	
-		
+
+		}
+
 		function initNyaSelect(nyaSelectObj){
 			return resetNyaSelect(nyaSelectObj);
 		}
 
 		/**
 			* get all controls definition (nyaSelectObj)
-			* 
+			*
 			* needed to bind these properties :
-			* 
-			* formlyExpressionProperties: {}, 
+			*
+			* formlyExpressionProperties: {},
 			* formlyValidators: {},
-			* formlyValidation                       		
+			* formlyValidation
 			*/
 		function getControlsDefinition(){
 			var controls = {};
-			resetNyaSelect(controls);	
+			resetNyaSelect(controls);
 			return controls;
 		}
-			
+
 		/**
 			* loading forms will not be able to retrieve formlyExpressionProperties
 			* -> here does the job
 			*/
 		function refreshControlFormlyExpressionProperties(configurationModel){
-			
+
 			if (angular.isObject(configurationModel)) {
 				//iterates lines
 				angular.forEach(configurationModel.lines, function(line, indexLine){
 					angular.forEach(line.columns, function(column, controlIndex){
 						var _controlsDefinition = getControlsDefinition();
 						angular.forEach(_controlsDefinition.controls, function(aControl, aControlIndex){
-							
+
 							if (column.control.type === aControl.formlyType &&
 									column.control.subtype === aControl.formlySubtype) {
-									//----> update control formlyExpressionProperties property											
-									column.control.formlyExpressionProperties = aControl.formlyExpressionProperties;									
+									//----> update control formlyExpressionProperties property
+									column.control.formlyExpressionProperties = aControl.formlyExpressionProperties;
 							}
-						});		
+						});
 					});
 				});
-			}	
+			}
 		}
-		
+
 
 		/**
 			* loading forms will not be able to retrieve formlyValidators
 			* -> here does the job
-			*/			
+			*/
 		function refreshControlFormlyValidators(configurationModel){
-			
+
 			if (angular.isObject(configurationModel)) {
 				//iterates lines
 				angular.forEach(configurationModel.lines, function(line, indexLine){
@@ -94,22 +94,22 @@
 						angular.forEach(_controlsDefinition.controls, function(aControl, aControlIndex){
 							if (column.control.type === aControl.formlyType &&
 									column.control.subtype === aControl.formlySubtype) {
-									//----> update control formlyValidators property											
+									//----> update control formlyValidators property
 									column.control.formlyValidators = aControl.formlyValidators;
 							}
-						});		
+						});
 					});
 				});
-			}				
-			
-		}		
+			}
+
+		}
 
 		/**
 			* loading forms will not be able to retrieve formlyValidation
 			* -> here does the job
-			*/			
+			*/
 		function refreshControlFormlyValidation(configurationModel){
-		
+
 			if (angular.isObject(configurationModel)) {
 				//iterates lines
 				angular.forEach(configurationModel.lines, function(line, indexLine){
@@ -118,17 +118,17 @@
 						angular.forEach(_controlsDefinition.controls, function(aControl, aControlIndex){
 							if (column.control.type === aControl.formlyType &&
 									column.control.subtype === aControl.formlySubtype) {
-									//----> update control formlyValidation property											
+									//----> update control formlyValidation property
 									column.control.formlyValidation = aControl.formlyValidation;
 							}
-						});		
+						});
 					});
 				});
-			}					
-			
+			}
+
 		}
 
-			
+
 		/**
 			* init object : return true (if not true, you may have problem^^)
 			*/
@@ -137,41 +137,41 @@
 
 											controls : [
 																	{
-																		id: 'empty',  
-																		name: 'no control', 
-																		subtitle: 'no control', 
-																		group: 'Blank', 
-																		formlyType: 'blank', 
-																		formlySubtype: '', 
-																		formlyLabel: '', 
-																		formlyRequired: false, 
-																		formlyDesciption: '', 
-																		formlyOptions: [] , 
-																		formlyExpressionProperties: {}, 
-																		formlyValidators: {}, 
-																		formlyValidation: {} 
+																		id: 'empty',
+																		name: 'no control',
+																		subtitle: 'no control',
+																		group: 'Blank',
+																		formlyType: 'blank',
+																		formlySubtype: '',
+																		formlyLabel: '',
+																		formlyRequired: false,
+																		formlyDesciption: '',
+																		formlyOptions: [] ,
+																		formlyExpressionProperties: {},
+																		formlyValidators: {},
+																		formlyValidation: {}
 																	},
 
 																	{id: 'Header',  name: 'Header', subtitle: 'no control', group: 'Decoration', formlyType: 'header', formlySubtype: '', formlyLabel: '', formlyRequired: false, formlyDesciption: '', formlyOptions: [] , formlyExpressionProperties: {}, formlyValidators: {}, formlyValidation: {}},
 																	{id: 'Subtitle',  name: 'Subtitle', subtitle: 'no control', group: 'Decoration', formlyType: 'subTitle', formlySubtype: '', formlyLabel: '', formlyRequired: false, formlyDesciption: '', formlyOptions: [] , formlyExpressionProperties: {}, formlyValidators: {}, formlyValidation: {}},
 
 																	{
-																		id: 'TextInput',  
-																		name: 'Text input', 
-																		subtitle: 'Text input', 
-																		group: 'input', 
-																		formlyType: 'input', 
-																		formlySubtype: '', 
-																		formlyLabel: '', 
-																		formlyRequired: false, 
-																		formlyDesciption: '', 
-																		formlyOptions: [] , 
-																		formlyExpressionProperties: {}, 
-																		formlyValidators: {}, 
+																		id: 'TextInput',
+																		name: 'Text input',
+																		subtitle: 'Text input',
+																		group: 'input',
+																		formlyType: 'input',
+																		formlySubtype: '',
+																		formlyLabel: '',
+																		formlyRequired: false,
+																		formlyDesciption: '',
+																		formlyOptions: [] ,
+																		formlyExpressionProperties: {},
+																		formlyValidators: {},
 																		formlyValidation: {
 																												messages: {
 																																		required: function(viewValue, modelValue, scope) {
-																																					//return a required validation message : 
+																																					//return a required validation message :
 																																					//-> '<label as name> is required '
 																																					//-> or if not exists or empty just 'this field is required'
 																																					var defaultReturnMsg = 'this Text input field is required';
@@ -183,22 +183,49 @@
 																	},
 
 																	{
-																		id: 'Password',  
-																		name: 'Password', 
-																		subtitle: 'Password', 
-																		group: 'input', 
-																		formlyType: 'input', 
-																		formlySubtype: 'password', 
-																		formlyLabel: '', 
-																		formlyRequired: false, 
-																		formlyDesciption: '', 
-																		formlyOptions: [] , 
-																		formlyExpressionProperties: {}, 
-																		formlyValidators: {}, 
+																		id: 'FileUpload',
+																		name: 'File upload',
+																		subtitle: 'File upload',
+																		group: 'input',
+																		formlyType: 'fileupload',
+																		formlySubtype: '',
+																		formlyLabel: '',
+																		formlyRequired: false,
+																		formlyDesciption: '',
+																		formlyOptions: [] ,
+																		formlyExpressionProperties: {},
+																		formlyValidators: {},
+																		formlyValidation: {
+																												messages: {
+																																		required: function(viewValue, modelValue, scope) {
+																																					//return a required validation message :
+																																					//-> '<label as name> is required '
+																																					//-> or if not exists or empty just 'this field is required'
+																																					var defaultReturnMsg = 'this File upload field is required';
+																																					var returnMsg = (typeof scope.to.label !== 'undefined') ? ((scope.to.label !== '') ? scope.to.label + ' is required' : defaultReturnMsg) : defaultReturnMsg;
+																																					return returnMsg;
+																																				}
+																																	}
+																											}
+																	},
+
+																	{
+																		id: 'Password',
+																		name: 'Password',
+																		subtitle: 'Password',
+																		group: 'input',
+																		formlyType: 'input',
+																		formlySubtype: 'password',
+																		formlyLabel: '',
+																		formlyRequired: false,
+																		formlyDesciption: '',
+																		formlyOptions: [] ,
+																		formlyExpressionProperties: {},
+																		formlyValidators: {},
 																		formlyValidation: {
 																											messages: {
 																																	required: function(viewValue, modelValue, scope) {
-																																				//return a required validation message : 
+																																				//return a required validation message :
 																																				//-> '<label as name> is required '
 																																				//-> or if not exists or empty just 'this field is required'
 																																				var defaultReturnMsg = 'this Password field is required';
@@ -208,19 +235,19 @@
 																																}
 																										}
 																},
-																	
+
 																	{
-																		id 													: 'Email',  
-																		name 												: 'Email', 
-																		subtitle 										: 'Email', 
-																		group 											: 'input', 
-																		formlyType									: 'input', 
-																		formlySubtype 							: 'email', 
-																		formlyLabel 								: '', 
-																		formlyRequired 							: false, 
-																		formlyDesciption 						: '', 
-																		formlyOptions 							: [], 
-																		formlyExpressionProperties 	: {}, 
+																		id 													: 'Email',
+																		name 												: 'Email',
+																		subtitle 										: 'Email',
+																		group 											: 'input',
+																		formlyType									: 'input',
+																		formlySubtype 							: 'email',
+																		formlyLabel 								: '',
+																		formlyRequired 							: false,
+																		formlyDesciption 						: '',
+																		formlyOptions 							: [],
+																		formlyExpressionProperties 	: {},
 
 																		formlyValidators 						: {
 																																		emailShape : {
@@ -235,38 +262,38 @@
 																		formlyValidation: {
 																												messages: {
 																																		required: function(viewValue, modelValue, scope) {
-																																					//return a required validation message : 
+																																					//return a required validation message :
 																																					//-> '<label as name> is required '
 																																					//-> or if not exists or empty just 'this field is required'
-																																					
+
 																																					var defaultReturnMsg = 'this Email field is required';
 																																					var returnMsg = (typeof scope.to.label !== 'undefined') ? ((scope.to.label !== '') ? scope.to.label + ' is required' : defaultReturnMsg) : defaultReturnMsg;
-																																					//check if validation is really dued to require validation 
+																																					//check if validation is really dued to require validation
 																																					//and not another validation like emailShape validator
 																																					if (scope.to.required) return returnMsg;
 																																				}
 																																	}
 																											}
 																	},
-																	
+
 																	{
-																		id: 'Date',  
-																		name: 'Date', 
-																		subtitle: 'Date', 
-																		group: 'input', 
-																		formlyType: 'datepicker', 
-																		formlySubtype: '', 
-																		formlyLabel: '', 
-																		formlyRequired: false, 
-																		formlyDesciption: '', 
-																		formlyOptions: [], 
-																		datepickerPopup: 'dd-MMMM-yyyy', 
-																		formlyExpressionProperties: {}, 
-																		formlyValidators: {}, 
+																		id: 'Date',
+																		name: 'Date',
+																		subtitle: 'Date',
+																		group: 'input',
+																		formlyType: 'datepicker',
+																		formlySubtype: '',
+																		formlyLabel: '',
+																		formlyRequired: false,
+																		formlyDesciption: '',
+																		formlyOptions: [],
+																		datepickerPopup: 'dd-MMMM-yyyy',
+																		formlyExpressionProperties: {},
+																		formlyValidators: {},
 																		formlyValidation: {
 																												messages: {
 																																		required: function(viewValue, modelValue, scope) {
-																																					//return a required validation message : 
+																																					//return a required validation message :
 																																					//-> '<label as name> is required '
 																																					//-> or if not exists or empty just 'this field is required'
 																																					var defaultReturnMsg = 'this Date field is required';
@@ -278,22 +305,22 @@
 																	},
 
 																	{
-																		id: 'Texarea', 
-																		name: 'Textarea', 
-																		subtitle: 'Textarea', 
-																		group: 'Textarea', 
-																		formlyType: 'textarea', 
-																		formlySubtype: '', 
-																		formlyLabel: '', 
-																		formlyRequired: false, 
-																		formlyDesciption: '', 
-																		formlyOptions: [], 
-																		formlyExpressionProperties: {}, 
-																		formlyValidators: {}, 
+																		id: 'Texarea',
+																		name: 'Textarea',
+																		subtitle: 'Textarea',
+																		group: 'Textarea',
+																		formlyType: 'textarea',
+																		formlySubtype: '',
+																		formlyLabel: '',
+																		formlyRequired: false,
+																		formlyDesciption: '',
+																		formlyOptions: [],
+																		formlyExpressionProperties: {},
+																		formlyValidators: {},
 																		formlyValidation: {
 																												messages: {
 																																		required: function(viewValue, modelValue, scope) {
-																																					//return a required validation message : 
+																																					//return a required validation message :
 																																					//-> '<label as name> is required '
 																																					//-> or if not exists or empty just 'this field is required'
 																																					var defaultReturnMsg = 'this Textarea field is required';
@@ -305,24 +332,24 @@
 																	},
 
 																	{
-																		id: 'RichTextEditor', 
-																		name: 'RichTextEditor', 
-																		subtitle: 'RichTextEditor', 
-																		group: 'Textarea', 
-																		formlyType: 'richEditor', 
-																		formlySubtype: '', 
-																		formlyLabel: '', 
-																		formlyRequired: false, 
-																		formlyDesciption: '', 
-																		formlyOptions: [], 
-																		formlyExpressionProperties: {}, 
-			
+																		id: 'RichTextEditor',
+																		name: 'RichTextEditor',
+																		subtitle: 'RichTextEditor',
+																		group: 'Textarea',
+																		formlyType: 'richEditor',
+																		formlySubtype: '',
+																		formlyLabel: '',
+																		formlyRequired: false,
+																		formlyDesciption: '',
+																		formlyOptions: [],
+																		formlyExpressionProperties: {},
+
 																		formlyValidators 						: {},
 
 																		formlyValidation: {
 																												messages: {
 																																		required: function(viewValue, modelValue, scope) {
-																																					//return a required validation message : 
+																																					//return a required validation message :
 																																					//-> '<label as name> is required '
 																																					//-> or if not exists or empty just 'this field is required'
 																																					var defaultReturnMsg = 'this RichTextEditor field is required';
@@ -334,23 +361,23 @@
 																	},
 
 																	{
-																		id: 'Radio', 
-																		name: 'Radio', 
-																		subtitle: 'Radio', 
-																		options: [], 
-																		group: 'Radio', 
-																		formlyType: 'radio', 
-																		formlySubtype: '', 
-																		formlyLabel: '', 
-																		formlyRequired: false, 
-																		formlyDesciption: '' , 
-																		formlyOptions: [], 
-																		formlyExpressionProperties: {}, 
-																		formlyValidators: {}, 
+																		id: 'Radio',
+																		name: 'Radio',
+																		subtitle: 'Radio',
+																		options: [],
+																		group: 'Radio',
+																		formlyType: 'radio',
+																		formlySubtype: '',
+																		formlyLabel: '',
+																		formlyRequired: false,
+																		formlyDesciption: '' ,
+																		formlyOptions: [],
+																		formlyExpressionProperties: {},
+																		formlyValidators: {},
 																		formlyValidation: {
 																											messages: {
 																																	required: function(viewValue, modelValue, scope) {
-																																				//return a required validation message : 
+																																				//return a required validation message :
 																																				//-> '<label as name> is required '
 																																				//-> or if not exists or empty just 'this field is required'
 																																				var defaultReturnMsg = 'this Password field is required';
@@ -362,22 +389,22 @@
 																	},
 
 																	{
-																		id: 'Checkbox', 
-																		name: 'Checkbox', 
-																		subtitle: 'Checkbox', 
-																		group: 'Checkbox', 
-																		formlyType: 'checkbox', 
-																		formlySubtype: '', 
-																		formlyLabel: '', 
-																		formlyRequired: false, 
-																		formlyDesciption: '', 
-																		formlyOptions: [], 
-																		formlyExpressionProperties: {}, 
-																		formlyValidators: {}, 
+																		id: 'Checkbox',
+																		name: 'Checkbox',
+																		subtitle: 'Checkbox',
+																		group: 'Checkbox',
+																		formlyType: 'checkbox',
+																		formlySubtype: '',
+																		formlyLabel: '',
+																		formlyRequired: false,
+																		formlyDesciption: '',
+																		formlyOptions: [],
+																		formlyExpressionProperties: {},
+																		formlyValidators: {},
 																		formlyValidation: {
 																											messages: {
 																																	required: function(viewValue, modelValue, scope) {
-																																				//return a required validation message : 
+																																				//return a required validation message :
 																																				//-> '<label as name> is required '
 																																				//-> or if not exists or empty just 'this field is required'
 																																				var defaultReturnMsg = 'this Checkbox field is required';
@@ -389,23 +416,23 @@
 																	},
 
 																	{
-																		id: 'BasicSelect', 
-																		name: 'Basic select', 
+																		id: 'BasicSelect',
+																		name: 'Basic select',
 																		subtitle: 'Basic select',
-																		options: [], 
-																		group: 'Select', 
-																		formlyType: 'basicSelect', 
-																		formlySubtype: '', 
-																		formlyLabel: '', 
-																		formlyRequired: false, 
-																		formlyDesciption: '', 
-																		formlyOptions: [], 
-																		formlyExpressionProperties: {}, 
-																		formlyValidators: {}, 
+																		options: [],
+																		group: 'Select',
+																		formlyType: 'basicSelect',
+																		formlySubtype: '',
+																		formlyLabel: '',
+																		formlyRequired: false,
+																		formlyDesciption: '',
+																		formlyOptions: [],
+																		formlyExpressionProperties: {},
+																		formlyValidators: {},
 																		formlyValidation: {
 																											messages: {
 																																	required: function(viewValue, modelValue, scope) {
-																																				//return a required validation message : 
+																																				//return a required validation message :
 																																				//-> '<label as name> is required '
 																																				//-> or if not exists or empty just 'this field is required'
 																																				var defaultReturnMsg = 'this Basic select field is required';
@@ -417,23 +444,23 @@
 																	},
 
 																	{
-																		id: 'GroupedSelect', 
-																		name: 'Grouped Select', 
+																		id: 'GroupedSelect',
+																		name: 'Grouped Select',
 																		subtitle: 'Grouped Select',
-																		options: [], 
-																		group: 'Select', 
-																		formlyType: 'groupedSelect', 
-																		formlySubtype: '', 
-																		formlyLabel: '', 
-																		formlyRequired: false, 
+																		options: [],
+																		group: 'Select',
+																		formlyType: 'groupedSelect',
+																		formlySubtype: '',
+																		formlyLabel: '',
+																		formlyRequired: false,
 																		formlyDesciption: '',
-																		formlyOptions: [], 
-																		formlyExpressionProperties: {}, 
-																		formlyValidators: {}, 
+																		formlyOptions: [],
+																		formlyExpressionProperties: {},
+																		formlyValidators: {},
 																		formlyValidation: {
 																											messages: {
 																																	required: function(viewValue, modelValue, scope) {
-																																				//return a required validation message : 
+																																				//return a required validation message :
 																																				//-> '<label as name> is required '
 																																				//-> or if not exists or empty just 'this field is required'
 																																				var defaultReturnMsg = 'this Grouped Select field is required';
@@ -448,16 +475,16 @@
 												selectedControl : 'none' ,
 												temporyConfig : {
 																					selectedControl: 'none',
-																					formlyLabel: 'label', 
-																					formlyRequired: false, 
+																					formlyLabel: 'label',
+																					formlyRequired: false,
 																					formlyDesciption: '',
 																					formlyPlaceholder: '',
 																					formlyOptions : [],
 																					//expressions/validation fields
 																					formlyExpressionProperties: {},
 																					formlyValidators: {},
-																					formlyValidation: {}                                        
-																				} 
+																					formlyValidation: {}
+																				}
 
 			};
 
@@ -465,17 +492,17 @@
 			angular.copy(newNyaSelectObj, nyaSelectObj);
 			return true;
 		}
-		
-		
-		
-		
-		
+
+
+
+
+
 		/**
 		 * equivalent to formFielManage service in easy form generator
 		 */
 		function initConfigurationEditFromScratch(configurationModel){
 			var configurationModelInit = {
-				activeLine: 1,   
+				activeLine: 1,
 				listConfigStep: [
 													'init',
 													'first',
@@ -487,18 +514,18 @@
 														false,
 														false,
 														false
-													], 
-				configStepCounter : 0, 
+													],
+				configStepCounter : 0,
 				submitButtonText  : 'submit',
 				cancelButtonText  : 'cancel',
 				lines: [
 								{
-									line:1,                                       
+									line:1,
 									activeColumn : 1,
 									columns: [
-														{  
+														{
 															numColumn: 1,
-															exist:true, 
+															exist:true,
 															control: {
 																					type:'none',
 																					key: 'none',
@@ -511,16 +538,16 @@
 																				}
 															}
 														]
-									}                                 
+									}
 						]
 			};
-			angular.copy(configurationModelInit, configurationModel);                         
+			angular.copy(configurationModelInit, configurationModel);
 		}
 
 		function bindConfigurationLines(configurationModel, lines){
 			if( Object.prototype.toString.call(lines) === '[object Array]' ) {
 				var configurationModelResult = {
-					activeLine: 1,   
+					activeLine: 1,
 					listConfigStep: [
 														'init',
 														'first',
@@ -532,15 +559,15 @@
 															false,
 															false,
 															false
-														], 
-					configStepCounter: 0, 
+														],
+					configStepCounter: 0,
 					submitButtonText : 'submit',
 					cancelButtonText: 'cancel',
 					lines: []
 				};
-				configurationModelResult.lines = [].concat(lines);  
-									
-				angular.copy(configurationModelResult, configurationModel);                                         
+				configurationModelResult.lines = [].concat(lines);
+
+				angular.copy(configurationModelResult, configurationModel);
 
 				return getMessageObject('configuration model is bound','lines are bound to configuration model.');
 			}else{
@@ -552,7 +579,7 @@
 			resetFormlyModel(formlyModel);
 			resetDataModel(formlyDataModel);
 			/**
-				* manage header here line0 
+				* manage header here line0
 				*/
 			var lineNumber = configurationModel.lines.length;
 			for (var i = 0; i < lineNumber; i++) {
@@ -562,8 +589,8 @@
 						if (configurationModel.lines[i].columns[0].control.type === 'header') {
 							addOneColumnHeader(formlyModel, configurationModel, i);
 						}else{
-							addOneColumnControl(formlyModel, configurationModel, i);  
-						}          
+							addOneColumnControl(formlyModel, configurationModel, i);
+						}
 					}
 					if (configurationModel.lines[i].columns.length === 2) {
 						addTwoColumnControl(formlyModel, configurationModel,i);
@@ -583,7 +610,7 @@
 
 		function addOneColumnHeader(formlyModel, configurationModel,lineIndex){
 			/**
-				* text header is stored in "description" in templateOtion model 
+				* text header is stored in "description" in templateOtion model
 				*/
 			var headerTemplateCol0 = '<div class="row"><div class="col-xs-12 col-sm-12 col-md-12 col-lg-12"><h2 class="text-center">' + extractTemplateOptionDescription(configurationModel.lines[lineIndex].columns[0].control) + '<h2></div></div><hr/>';
 
@@ -619,17 +646,17 @@
 				validators            : extractFormlyValidators(configurationModel.lines[lineIndex].columns[0].control),
 				validation            : extractFormlyValidation(configurationModel.lines[lineIndex].columns[0].control)
 			};
-			//////////////////////////////////////////////                  
-			//datepicker additionnal particular property  
-			//////////////////////////////////////////////                  
+			//////////////////////////////////////////////
+			//datepicker additionnal particular property
+			//////////////////////////////////////////////
 			if (configurationModel.lines[lineIndex].columns[0].control.type === 'datepicker') {
 				addDatepickerPopupProperty(fieldToPush, configurationModel,lineIndex);
-			}     
+			}
 
-			formlyModel.push( 
+			formlyModel.push(
 				fieldToPush
 			);
-		}    
+		}
 
 		function addTwoColumnControl(formlyModel, configurationModel,lineIndex){
 
@@ -658,14 +685,14 @@
 					},
 							expressionProperties : extractFormlyExpressionProperties(configurationModel.lines[lineIndex].columns[0].control),
 							validators : extractFormlyValidators(configurationModel.lines[lineIndex].columns[0].control),
-							validation : extractFormlyValidation(configurationModel.lines[lineIndex].columns[0].control)                                  
+							validation : extractFormlyValidation(configurationModel.lines[lineIndex].columns[0].control)
 				};
-			//////////////////////////////////////////////                  
-			//datepicker additionnal particular property  
-			//////////////////////////////////////////////                  
+			//////////////////////////////////////////////
+			//datepicker additionnal particular property
+			//////////////////////////////////////////////
 			if (configurationModel.lines[lineIndex].columns[0].control.type === 'datepicker') {
 				addDatepickerPopupProperty(controlCol0, configurationModel,lineIndex);
-			}                            
+			}
 
 			var controlCol1 =  {
 								className: 'col-xs-6',
@@ -681,15 +708,15 @@
 								},
 										expressionProperties : extractFormlyExpressionProperties(configurationModel.lines[lineIndex].columns[1].control),
 										validators : extractFormlyValidators(configurationModel.lines[lineIndex].columns[1].control),
-										validation : extractFormlyValidation(configurationModel.lines[lineIndex].columns[1].control)                                  
+										validation : extractFormlyValidation(configurationModel.lines[lineIndex].columns[1].control)
 				};
 
-			//////////////////////////////////////////////                  
-			//datepicker additionnal particular property  
-			//////////////////////////////////////////////                  
+			//////////////////////////////////////////////
+			//datepicker additionnal particular property
+			//////////////////////////////////////////////
 			if (configurationModel.lines[lineIndex].columns[1].control.type === 'datepicker') {
 				addDatepickerPopupProperty(controlCol1, configurationModel,lineIndex);
-			}                                
+			}
 
 			var FieldGroup = [];
 
@@ -698,16 +725,16 @@
 			}else{
 				FieldGroup.push(controlCol0);
 			}
-				
+
 			if (configurationModel.lines[lineIndex].columns[1].control.type === 'header') {
 				FieldGroup.push(headerTemplateCol1);
 			}else{
 				FieldGroup.push(controlCol1);
-			}    
+			}
 
 			formlyModel.push(
 					{
-						className: 'row', 
+						className: 'row',
 						fieldGroup: FieldGroup
 					}
 			);
@@ -729,7 +756,7 @@
 																	className: 'col-xs-4',
 																	template:'<div class="row"><div class=""><h2 class="text-center">' + extractTemplateOptionDescription(configurationModel.lines[lineIndex].columns[2].control) + '<h2><hr/></div></div>'
 																};
-		
+
 			var controlCol0 =     {
 																className: 'col-xs-4',
 																type: typeof configurationModel.lines[lineIndex].columns[0].control.type !== 'undefined' ? (configurationModel.lines[lineIndex].columns[0].control.type === 'none' ? 'blank': configurationModel.lines[lineIndex].columns[0].control.type): 'blank',
@@ -740,18 +767,18 @@
 																		required : extractTemplateOptionRequired(configurationModel.lines[lineIndex].columns[0].control),
 																		placeholder : extractTemplateOptionPlaceholder(configurationModel.lines[lineIndex].columns[0].control),
 																		description : extractTemplateOptionDescription(configurationModel.lines[lineIndex].columns[0].control),
-																		options : extractTemplateOptionOptions(configurationModel.lines[lineIndex].columns[0].control)                                              
+																		options : extractTemplateOptionOptions(configurationModel.lines[lineIndex].columns[0].control)
 																},
 																		expressionProperties : extractFormlyExpressionProperties(configurationModel.lines[lineIndex].columns[0].control),
 																		validators : extractFormlyValidators(configurationModel.lines[lineIndex].columns[0].control),
-																		validation : extractFormlyValidation(configurationModel.lines[lineIndex].columns[0].control)                                   
+																		validation : extractFormlyValidation(configurationModel.lines[lineIndex].columns[0].control)
 															};
-			//////////////////////////////////////////////                  
-			//datepicker additionnal particular property  
-			//////////////////////////////////////////////                  
+			//////////////////////////////////////////////
+			//datepicker additionnal particular property
+			//////////////////////////////////////////////
 			if (configurationModel.lines[lineIndex].columns[0].control.type === 'datepicker') {
 				addDatepickerPopupProperty(controlCol0, configurationModel,lineIndex);
-			}                             
+			}
 
 			var controlCol1 =  {
 																className: 'col-xs-4',
@@ -763,18 +790,18 @@
 																		required : extractTemplateOptionRequired(configurationModel.lines[lineIndex].columns[1].control),
 																		placeholder : extractTemplateOptionPlaceholder(configurationModel.lines[lineIndex].columns[1].control),
 																		description : extractTemplateOptionDescription(configurationModel.lines[lineIndex].columns[1].control),
-																		options : extractTemplateOptionOptions(configurationModel.lines[lineIndex].columns[1].control)                                               
+																		options : extractTemplateOptionOptions(configurationModel.lines[lineIndex].columns[1].control)
 																},
 																		expressionProperties : extractFormlyExpressionProperties(configurationModel.lines[lineIndex].columns[1].control),
 																		validators : extractFormlyValidators(configurationModel.lines[lineIndex].columns[1].control),
-																		validation : extractFormlyValidation(configurationModel.lines[lineIndex].columns[1].control)                                  
+																		validation : extractFormlyValidation(configurationModel.lines[lineIndex].columns[1].control)
 												};
-			//////////////////////////////////////////////                  
-			//datepicker additionnal particular property  
-			//////////////////////////////////////////////                  
+			//////////////////////////////////////////////
+			//datepicker additionnal particular property
+			//////////////////////////////////////////////
 			if (configurationModel.lines[lineIndex].columns[1].control.type === 'datepicker') {
 				addDatepickerPopupProperty(controlCol1, configurationModel,lineIndex);
-			}                       
+			}
 			var controlCol2 =  {
 																className: 'col-xs-4',
 																type: typeof configurationModel.lines[lineIndex].columns[2].control.type !== 'undefined' ?  (configurationModel.lines[lineIndex].columns[2].control.type === 'none' ? 'blank': configurationModel.lines[lineIndex].columns[2].control.type) : 'blank',
@@ -785,18 +812,18 @@
 																		required : extractTemplateOptionRequired(configurationModel.lines[lineIndex].columns[2].control),
 																		placeholder : extractTemplateOptionPlaceholder(configurationModel.lines[lineIndex].columns[2].control),
 																		description : extractTemplateOptionDescription(configurationModel.lines[lineIndex].columns[2].control),
-																		options : extractTemplateOptionOptions(configurationModel.lines[lineIndex].columns[2].control)                                              
+																		options : extractTemplateOptionOptions(configurationModel.lines[lineIndex].columns[2].control)
 																},
 																		expressionProperties : extractFormlyExpressionProperties(configurationModel.lines[lineIndex].columns[2].control),
 																		validators : extractFormlyValidators(configurationModel.lines[lineIndex].columns[2].control),
-																		validation : extractFormlyValidation(configurationModel.lines[lineIndex].columns[2].control)                                   
+																		validation : extractFormlyValidation(configurationModel.lines[lineIndex].columns[2].control)
 												};
-			//////////////////////////////////////////////                  
-			//datepicker additionnal particular property  
-			//////////////////////////////////////////////                  
+			//////////////////////////////////////////////
+			//datepicker additionnal particular property
+			//////////////////////////////////////////////
 			if (configurationModel.lines[lineIndex].columns[2].control.type === 'datepicker') {
 				addDatepickerPopupProperty(controlCol2, configurationModel,lineIndex);
-			}     
+			}
 
 			var FieldGroup = [];
 
@@ -805,23 +832,23 @@
 			}else{
 				FieldGroup.push(controlCol0);
 			}
-				
+
 			if (configurationModel.lines[lineIndex].columns[1].control.type === 'header') {
 				FieldGroup.push(headerTemplateCol1);
 			}else{
 				FieldGroup.push(controlCol1);
-			}    
+			}
 
 			if (configurationModel.lines[lineIndex].columns[2].control.type === 'header') {
 				FieldGroup.push(headerTemplateCol2);
 			}else{
 				FieldGroup.push(controlCol2);
-			}    
+			}
 
 
 			formlyModel.push(
 					{
-						className: 'row', 
+						className: 'row',
 						fieldGroup: FieldGroup
 					}
 			);
@@ -883,7 +910,7 @@
 			var messageObj = {
 				noError : false,
 				title: '',
-				Message: ''  
+				Message: ''
 			};
 
 			messageObj.noError = false;
@@ -896,17 +923,17 @@
 			var messageObj = {
 				noError : false,
 				title: '',
-				Message: ''  
+				Message: ''
 			};
 
 			messageObj.noError = true;
 			messageObj.title = messageTitle;
 			messageObj.Message = messageBody;
 			return messageObj;
-		}    
+		}
 
-	
-		
-		
-	
+
+
+
+
 })();

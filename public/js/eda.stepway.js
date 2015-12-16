@@ -11,11 +11,11 @@
  *  -----------------------------------------------------------------------
  *  application module of the step way version of easy form generator
  *  -----------------------------------------------------------------------
- *  
- *   
+ *
+ *
  *     - this version is production friendly -
  *
- * 
+ *
  * ——————————————————————————————————————————————
  * MIT (2015) - Erwan Datin (MacKentoch)
  * https://github.com/MacKentoch/easyFormGenerator
@@ -29,14 +29,15 @@
     .module('eda.easyformGen.stepway', ['ngwfApp']);
 
   angular
-    .module('ngwfApp', [  
+    .module('ngwfApp', [
       'ngwfApp.core',
       'eda.easyFormGenerator.translate',
       'eda.easyFormSteWayConfigProvider',
       'ngwfApp.controllers',
-      'ngwfApp.services', 
+      'ngwfApp.services',
       'ngwfApp.filters',
-      'ngwfApp.directives'
+      'ngwfApp.directives',
+      'ngFileUpload',
     ])
     .value('easyFormGenVersion', 'v1.0.33')
     .config(formlyConfigFct)
@@ -45,13 +46,13 @@
 
     easyFromConfigFct.$inject = ['easyFormSteWayConfigProvider'];
     function easyFromConfigFct(easyFormSteWayConfigProvider){
-      //enable/disable easy form modal animation 
+      //enable/disable easy form modal animation
       //HERE : disabling animation due to angular bootstrap backdrop bug with angular >= 1.4
       easyFormSteWayConfigProvider.setModalAnimation(false);
-      
+
       //disable control example :
       //easyFormSteWayConfigProvider.disableControl('TextInput');
-      
+
       //enable control example :
       //easyFormSteWayConfigProvider.enableControl('TextInput');
 
@@ -59,7 +60,7 @@
       //console.info('lang = ' + easyFormSteWayConfigProvider.getCurrentLanguage());
       //example set currrent language
       //easyFormSteWayConfigProvider.setLanguage('fr');
-      
+
     }
 
 
@@ -67,7 +68,7 @@
     formlyConfigFct.$inject = ['formlyConfigProvider'];
     function formlyConfigFct(formlyConfigProvider){
       //////////////////////////////
-      // CONFIG HERE (formly...)              
+      // CONFIG HERE (formly...)
       /////////////////////////////
       formlyConfigProvider.setType(
         {
@@ -93,13 +94,13 @@
         }
       );
 
-      var basicSelectTemplate =   ' <ol   class="nya-bs-select col-sm-12 col-xs-12 col-md-12 col-lg12" ' + 
-                    '   ng-model="model[options.key || index]"  ' + 
-                      '   id="{{id}}"  ' + 
-                      '   disabled="options.templateOptions.options.length === 0"> ' + 
-                      '   <li class="nya-bs-option" nya-bs-option="option in options.templateOptions.options"> ' + 
-                      '     <a>{{option.name}}</a> ' + 
-                      '   </li> ' + 
+      var basicSelectTemplate =   ' <ol   class="nya-bs-select col-sm-12 col-xs-12 col-md-12 col-lg12" ' +
+                    '   ng-model="model[options.key || index]"  ' +
+                      '   id="{{id}}"  ' +
+                      '   disabled="options.templateOptions.options.length === 0"> ' +
+                      '   <li class="nya-bs-option" nya-bs-option="option in options.templateOptions.options"> ' +
+                      '     <a>{{option.name}}</a> ' +
+                      '   </li> ' +
                       ' </ol>     ' ;
 
      formlyConfigProvider.setType(
@@ -116,7 +117,7 @@
                    '       disabled="options.templateOptions.options.length === 0">' +
                                  '       <li nya-bs-option="option in  options.templateOptions.options group by option.group"  ' +
                                  '       >' +
-                                 '         <span class="dropdown-header">{{$group}}</span>' + 
+                                 '         <span class="dropdown-header">{{$group}}</span>' +
                                  '         <a>' +
                                  '           <span>{{option.name}}</span>' +
                                  '           <span class="glyphicon glyphicon-ok check-mark"></span>' +
@@ -131,6 +132,81 @@
         }
       );
 
+      var fileUploadTemplate = '<div>' +
+      '<div class="input-group">' +
+      '<input type="text" class="form-control" ngf-select ng-model="model[options.key || index]" name="{{id}}" />' +
+      '<span class="input-group-addon" ng-click="startUpload()"><i class="glyphicon glyphicon-upload"></i></span>' +
+      '</div>' +
+      '</div>';
+
+     formlyConfigProvider.setType(
+        {
+          name: 'fileupload',
+          template: fileUploadTemplate,
+          wrapper: ['bootstrapLabel', 'bootstrapHasError'],
+          controller: /* @ngInject */ function($scope, Upload) {
+            $scope.startUpload = startUpload;
+            $scope.options.data.startUpload = startUpload;
+
+            function startUpload() {
+              if (!$scope.fileInputEl.val()) {
+                notify.warning('File Not Uploaded', 'Please choose a file to upload');
+                return undefined;
+              }
+              $scope.uploading = upload({
+                url: $scope.to.url,
+                method: 'POST',
+                headers: {
+                  'Accept': '*/*'
+                },
+                data: {
+                  file: $scope.fileInputEl
+                }
+              }).then(function successHandler(response) {
+                // Remove any previous errors
+                $scope.to.fileUploadErrors = null;
+                var successMessage = $scope.to.successMessage;
+                if (_.isFunction(successMessage)) {
+                  successMessage = successMessage(response);
+                }
+                if (successMessage !== null) {
+                  notify.success(successMessage || 'File uploaded successfully');
+                }
+                if ($scope.to.onSuccess) {
+                  return $scope.to.onSuccess(response, $scope.options, $scope);
+                } else {
+                  return response;
+                }
+              }, function errorHandler(response) {
+                if (response.data && _.isArray(response.data) && !_.isUndefined(response.data[0].lineNumber)) {
+                  $scope.to.fileUploadErrors = response.data;
+                  var errorMessage = $scope.to.errorMessage;
+                  if (_.isFunction(errorMessage)) {
+                    errorMessage = errorMessage(response);
+                  }
+                  if (errorMessage) {
+                    notify.error('Upload failed', errorMessage);
+                  }
+                } else {
+                  delete response.config.azData.notifications.error;
+                  NotifyInterceptor.responseError(response);
+                }
+                throw response;
+              });
+
+              return $scope.uploading;
+            }
+          },
+          link: function(scope, el) {
+            var int = setInterval(function() {
+              scope.fileInputEl = el.find('input[type=file]');
+              if (scope.fileInputEl.length) {
+                clearInterval(int);
+              }
+            }, 10);
+          }
+        }
+      );
      ////////////////////////////
      // angular UI date picker
      ////////////////////////////
@@ -177,7 +253,7 @@
         ngModelAttrs[camelize(binding)] = {bound: binding};
       });
 
-    
+
 
       formlyConfigProvider.setType({
         name: 'datepicker',
@@ -189,7 +265,7 @@
             $event.stopPropagation();
             $scope.opened = true;
           };
-         
+
          }],
         defaultOptions: {
           ngModelAttrs: ngModelAttrs,
@@ -199,14 +275,14 @@
               onClick: function(options, scope) {
                 options.templateOptions.isOpen = !options.templateOptions.isOpen;
               }
-            },       
+            },
             onFocus: function($viewValue, $modelValue, scope) {
               scope.to.isOpen = !scope.to.isOpen;
             },
             datepickerOptions: {}
           }
         }
-        
+
       });
 
 
@@ -242,7 +318,7 @@
         return string.replace(/^([A-Z])/, function(match, chr) {
           return chr ? chr.toLowerCase() : '';
         });
-      } 
+      }
 
     }
 
@@ -250,7 +326,7 @@
 })();
 
 angular.module("ngwfApp").run(["$templateCache", function($templateCache) {$templateCache.put("edaStepWayEasyFormGeneratorTemplate.html","<section id=pageWfEdit><div ng-init=\"\"><div class=container><section id=preview><div id=preview-content><div class=content-container><toaster-container toaster-options=\"{ \'position-class\': \'toast-top-full-width\', \'extendedTimeout\':500, \'timeOut\':500, }\"></toaster-container><tabset justified=true><tab active=tab.editTab.active heading=\"{{\'EDIT_TAB\' | translate}}\"><div class=row><div class=\"row stepwizardTopmargin\"><div class=\"col-lg-8 col-lg-offset-2 col-md-8 col-md-offset-2\"><div class=stepwizard><div class=\"row stepwizard-row\"><div class=\"stepwizard-step col-md-3\"><button type=button class=\"btn btn-circle\" ng-class=\"{\'btn-primary\': configuration.stepIndicators[0], \'btn-default\': !configuration.stepIndicators[0]}\">0</button><p>{{\'WIZARD_LINES\' | translate}}</p></div><div class=\"stepwizard-step col-md-3\"><button type=button class=\"btn btn-circle\" ng-class=\"{\'btn-primary\': configuration.stepIndicators[1], \'btn-default\': !configuration.stepIndicators[1], \'disabled\': (configuration.configStepCounter < 1)}\">1</button><p>{{\'WIZARD_LAYOUT\' | translate}}</p></div><div class=\"stepwizard-step col-md-3\"><button type=button class=\"btn btn-default btn-circle\" ng-class=\"{\'btn-primary\': configuration.stepIndicators[2], \'btn-default\': !configuration.stepIndicators[2], \'disabled\': (configuration.configStepCounter < 2)}\">2</button><p>{{\'WIZARD_CONTROLS\' | translate}}</p></div><div class=\"stepwizard-step col-md-3\"><button type=button class=\"btn btn-default btn-circle\" ng-class=\"{\'btn-primary\': configuration.stepIndicators[3], \'btn-default\': !configuration.stepIndicators[3], \'disabled\': (configuration.configStepCounter < 3)}\">3</button><p>{{\'WIZARD_SAVE\' | translate}}</p></div></div></div></div></div></div><div class=row><ul class=pager><li ng-class=\"{\'disabled\':stepIndicators[0]}\"><button class=\"btn btn-primary customPagerButton\" ng-click=previousConfigStep()><i class=\"fa fa-arrow-left fa-2x pull-left\"></i> <span class=pull-right>{{\'PAGER_PREVIOUS\' | translate}}</span></button></li><li ng-class=\"{\'disabled\':stepIndicators[3]}\"><button class=\"btn btn-primary customPagerButton\" ng-click=nextConfigStep()><span class=pull-left>{{\'PAGER_NEXT\' | translate}}</span> <i class=\"fa fa-arrow-right fa-2x pull-right\"></i></button></li></ul><div class=animate-switch-container ng-switch=\"\" on=configuration.listConfigStep[configuration.configStepCounter]><div class=animate-switch ng-switch-when=init><div class=col-md-4><div id=commandPanel><div class=\"panel panel-default\"><div class=panel-heading><h3 class=panel-title><i class=\"fa fa-keyboard-o\"></i>&nbsp;{{\'COMMAND_PANEL\' | translate}}</h3></div><div class=panel-body><div class=row><div class=col-md-12><span class=addNewLine>{{\'ADD_NEW_LINE\' | translate}} :</span>&nbsp; <button class=\"btn btn-primary\" ng-click=addNewline()><i class=\"fa fa-plus fa-1x\"></i></button></div></div></div></div></div></div><div class=col-md-8><div id=visualPanel><div class=\"panel panel-default\"><div class=panel-heading><h3 class=panel-title><i class=\"fa fa-eye\"></i>&nbsp;{{\'VISUAL_PANEL\' | translate}}</h3></div><div class=panel-body><ul class=list-group><li class=list-group-item ng-repeat=\"line in configuration.lines track by $index\"><div ng-switch=\"\" on=line.columns.length><div class=\"row linesList\" ng-switch-when=1><div class=\"col-md-12 lineCommandButtons\" ng-show=\"configuration.lines.length > 1\"><button class=\"btn btn-warning\" ng-hide=\"$index==0\" ng-click=upThisLine($index)><i class=\"fa fa-arrow-up\"></i></button> <button class=\"btn btn-warning\" ng-hide=\"$index==(configuration.lines.length-1)\" ng-click=downThisLine($index)><i class=\"fa fa-arrow-down\"></i></button> <button class=\"btn btn-danger pull-right\" ng-click=removeThisLine($index)><i class=\"fa fa-trash-o\"></i></button></div><div class=col-md-12><div class=\"col-md-12 well\"><button class=\"btn btn-lg btn-block btn-default disabled\">{{line.columns[0].control.type !== \'none\' ? line.columns[0].control.type + \' \' + line.columns[0].control.subtype || \'\' : \'column 1\'}}</button></div></div></div><div class=\"row linesList\" ng-switch-when=2><div class=\"col-md-12 lineCommandButtons\" ng-show=\"configuration.lines.length > 1\"><button class=\"btn btn-warning\" ng-hide=\"$index==0\" ng-click=upThisLine($index)><i class=\"fa fa-arrow-up\"></i></button> <button class=\"btn btn-warning\" ng-hide=\"$index==(configuration.lines.length-1)\" ng-click=downThisLine($index)><i class=\"fa fa-arrow-down\"></i></button> <button class=\"btn btn-danger pull-right\" ng-click=removeThisLine($index)><i class=\"fa fa-trash-o\"></i></button></div><div class=col-md-12><div class=\"col-md-6 well\"><button class=\"btn btn-lg btn-block btn-default disabled\">{{line.columns[0].control.type !== \'none\' ? line.columns[0].control.type + \' \' + line.columns[0].control.subtype || \'\' : \'column 1\'}}</button></div><div class=\"col-md-6 well\"><button class=\"btn btn-lg btn-block btn-default disabled\">{{line.columns[1].control.type !== \'none\' ? line.columns[1].control.type + \' \' + line.columns[1].control.subtype || \'\' : \'column 2\'}}</button></div></div></div><div class=\"row linesList\" ng-switch-when=3><div class=\"col-md-12 lineCommandButtons\" ng-show=\"configuration.lines.length > 1\"><button class=\"btn btn-warning\" ng-hide=\"$index==0\" ng-click=upThisLine($index)><i class=\"fa fa-arrow-up\"></i></button> <button class=\"btn btn-warning\" ng-hide=\"$index==(configuration.lines.length-1)\" ng-click=downThisLine($index)><i class=\"fa fa-arrow-down\"></i></button> <button class=\"btn btn-danger pull-right\" ng-click=removeThisLine($index)><i class=\"fa fa-trash-o\"></i></button></div><div class=col-md-12><div class=\"col-md-4 well\"><button class=\"btn btn-lg btn-block btn-default disabled\">{{line.columns[0].control.type !== \'none\' ? line.columns[0].control.type + \' \' + line.columns[0].control.subtype || \'\' : \'column 1\'}}</button></div><div class=\"col-md-4 well\"><button class=\"btn btn-lg btn-block btn-default disabled\">{{line.columns[1].control.type !== \'none\' ? line.columns[1].control.type + \' \' + line.columns[1].control.subtype || \'\' : \'column 2\'}}</button></div><div class=\"col-md-4 well\"><button class=\"btn btn-lg btn-block btn-default disabled\">{{line.columns[2].control.type !== \'none\' ? line.columns[2].control.type + \' \' + line.columns[2].control.subtype || \'\' : \'column 3\'}}</button></div></div></div></div></li></ul></div></div></div></div></div><div class=animate-switch ng-switch-when=first><div class=col-md-4><div id=commandPanel><div class=\"panel panel-default\"><div class=panel-heading><h3 class=panel-title><i class=\"fa fa-keyboard-o\"></i>&nbsp;{{\'COMMAND_PANEL\' | translate}}</h3></div><div class=panel-body><div class=row><div class=col-md-12><h4 class=\"numberOfcolumsText text-center\"><i>- {{\'SELECTED_LINE\' | translate}} -</i></h4><h4 class=\"numberOfcolumsText text-center\">{{\'NUMBER_OF_COLUMN\' | translate}} :</h4></div></div><div class=row><div class=\"col-xs-2 col-xs-offset-3 col-sm-2 col-sm-offset-3 col-md-2 col-md-offset-3\"><button class=\"btn btn-primary pull-right btnMinusColumns\" ng-click=decreaseNumberOfColumns()><i class=\"fa fa-minus fa-1x\"></i></button></div><div class=\"col-xs-2 col-sm-2 col-md-2 text-center\"><span class=numberOfColumnsLabel>{{configuration.lines[configuration.activeLine -1].columns.length}}</span></div><div class=\"col-xs-2 col-sm-2 col-md-2\"><button class=\"btn btn-primary pull-left btnAddColumns\" ng-click=increaseNumberOfColumns()><i class=\"fa fa-plus fa-1x\"></i></button></div></div></div></div></div></div><div class=col-md-8><div id=visualPanel><div class=\"panel panel-default\"><div class=panel-heading><h3 class=panel-title><i class=\"fa fa-eye\"></i>&nbsp;{{\'VISUAL_PANEL\' | translate}}</h3></div><div class=panel-body><ul class=list-group><li class=list-group-item ng-repeat=\"line in configuration.lines track by $index\"><div ng-switch=\"\" on=line.columns.length><div class=\"row linesList\" ng-switch-when=1><div class=\"col-md-12 lineCommandButtons\" ng-show=\"configuration.lines.length > 1\"><button class=btn ng-class=\"{\'btn-warning\':($index + 1) !== configuration.activeLine, \'btn-success\': ($index + 1) === configuration.activeLine}\" ng-click=\"setActiveLineNumber($index + 1)\"><i class=fa ng-class=\"{\'fa-square-o\': ($index + 1) !== configuration.activeLine, \'fa-check-square-o\': ($index + 1) === configuration.activeLine}\"></i></button></div><div class=col-md-12><div class=\"col-md-12 well\"><button class=\"btn btn-lg btn-block btn-default disabled\">{{line.columns[0].control.type !== \'none\' ? line.columns[0].control.type + \' \' + line.columns[0].control.subtype || \'\' : \'column 1\'}}</button></div></div></div><div class=\"row linesList\" ng-switch-when=2><div class=\"col-md-12 lineCommandButtons\" ng-show=\"configuration.lines.length > 1\"><button class=btn ng-class=\"{\'btn-warning\':($index + 1) !== configuration.activeLine, \'btn-success\': ($index + 1) === configuration.activeLine}\" ng-click=\"setActiveLineNumber($index + 1)\"><i class=fa ng-class=\"{\'fa-square-o\': ($index + 1) !== configuration.activeLine, \'fa-check-square-o\': ($index + 1) === configuration.activeLine}\"></i></button></div><div class=col-md-12><div class=\"col-md-6 well\"><button class=\"btn btn-lg btn-block btn-default disabled\">{{line.columns[0].control.type !== \'none\' ? line.columns[0].control.type + \' \' + line.columns[0].control.subtype || \'\' : \'column 1\'}}</button></div><div class=\"col-md-6 well\"><button class=\"btn btn-lg btn-block btn-default disabled\">{{line.columns[1].control.type !== \'none\' ? line.columns[1].control.type + \' \' + line.columns[1].control.subtype || \'\' : \'column 2\'}}</button></div></div></div><div class=\"row linesList\" ng-switch-when=3><div class=\"col-md-12 lineCommandButtons\" ng-show=\"configuration.lines.length > 1\"><button class=btn ng-class=\"{\'btn-warning\':($index + 1) !== configuration.activeLine, \'btn-success\': ($index + 1) === configuration.activeLine}\" ng-click=\"setActiveLineNumber($index + 1)\"><i class=fa ng-class=\"{\'fa-square-o\': ($index + 1) !== configuration.activeLine, \'fa-check-square-o\': ($index + 1) === configuration.activeLine}\"></i></button></div><div class=col-md-12><div class=\"col-md-4 well\"><button class=\"btn btn-lg btn-block btn-default disabled\">{{line.columns[0].control.type !== \'none\' ? line.columns[0].control.type + \' \' + line.columns[0].control.subtype || \'\' : \'column 1\'}}</button></div><div class=\"col-md-4 well\"><button class=\"btn btn-lg btn-block btn-default disabled\">{{line.columns[1].control.type !== \'none\' ? line.columns[1].control.type + \' \' + line.columns[1].control.subtype || \'\' : \'column 2\'}}</button></div><div class=\"col-md-4 well\"><button class=\"btn btn-lg btn-block btn-default disabled\">{{line.columns[2].control.type !== \'none\' ? line.columns[2].control.type + \' \' + line.columns[2].control.subtype || \'\' : \'column 3\'}}</button></div></div></div></div></li></ul></div></div></div></div></div><div class=animate-switch ng-switch-when=second><div class=col-md-4><div id=commandPanel><div class=\"panel panel-default\"><div class=panel-heading><h3 class=panel-title><i class=\"fa fa-keyboard-o\"></i>&nbsp;{{\'COMMAND_PANEL\' | translate}}</h3></div><div class=panel-body><div class=row><div class=col-md-12><h4 class=\"numberOfcolumsText text-center\">- {{\'APPLY_CTRL2COL\' | translate}} -</h4></div></div><div class=row><div class=col-lg-12><hr><blockquote><p class=numberOfcolumsText><i class=\"fa fa-minus\"></i>&nbsp; {{\'CLIC_TAP_2_OPEN\' | translate}}.</p><p class=numberOfcolumsText><i class=\"fa fa-minus\"></i>&nbsp; {{\'SELECT_2_APPLY_COL\' | translate}}.</p></blockquote></div></div></div></div></div></div><div class=col-md-8><div id=visualPanel><div class=\"panel panel-default\"><div class=panel-heading><h3 class=panel-title><i class=\"fa fa-eye\"></i>&nbsp;{{\'VISUAL_PANEL\' | translate}}</h3></div><div class=panel-body><ul class=list-group><li class=list-group-item ng-repeat=\"line in configuration.lines track by $index\"><div ng-switch=\"\" on=line.columns.length><div class=\"row linesList\" ng-switch-when=1><div class=\"col-md-12 lineCommandButtons\" ng-show=\"configuration.lines.length > 1\"><button class=btn ng-class=\"{\'btn-warning\':($index + 1) !== configuration.activeLine, \'btn-success\': ($index + 1) === configuration.activeLine}\" ng-click=\"setActiveLineNumber($index + 1)\"><i class=fa ng-class=\"{\'fa-square-o\': ($index + 1) !== configuration.activeLine, \'fa-check-square-o\': ($index + 1) === configuration.activeLine}\"></i></button></div><div class=col-md-12><div class=\"col-md-12 well\"><button class=\"btn btn-lg btn-block\" ng-class=\"{\'btn-primary\': !line.columns[0].control.edited, \'btn-success\': line.columns[0].control.edited}\" ng-click=\"showModalAddCtrlToColumn(\'\', $index, 0)\">{{line.columns[0].control.type !== \'none\' ? line.columns[0].control.type + \' \' + line.columns[0].control.subtype || \'\' : \'column 1\'}}</button></div></div></div><div class=\"row linesList\" ng-switch-when=2><div class=\"col-md-12 lineCommandButtons\" ng-show=\"configuration.lines.length > 1\"><button class=btn ng-class=\"{\'btn-warning\':($index + 1) !== configuration.activeLine, \'btn-success\': ($index + 1) === configuration.activeLine}\" ng-click=\"setActiveLineNumber($index + 1)\"><i class=fa ng-class=\"{\'fa-square-o\': ($index + 1) !== configuration.activeLine, \'fa-check-square-o\': ($index + 1) === configuration.activeLine}\"></i></button></div><div class=col-md-12><div class=\"col-md-6 well\"><button class=\"btn btn-lg btn-block\" ng-class=\"{\'btn-primary\': !line.columns[0].control.edited, \'btn-success\': line.columns[0].control.edited}\" ng-click=\"showModalAddCtrlToColumn(\'\', $index, 0)\">{{line.columns[0].control.type !== \'none\' ? line.columns[0].control.type + \' \' + line.columns[0].control.subtype || \'\' : \'column 1\'}}</button></div><div class=\"col-md-6 well\"><button class=\"btn btn-lg btn-block\" ng-class=\"{\'btn-primary\': !line.columns[1].control.edited, \'btn-success\': line.columns[1].control.edited}\" ng-click=\"showModalAddCtrlToColumn(\'\', $index, 1)\">{{line.columns[1].control.type !== \'none\' ? line.columns[1].control.type + \' \' + line.columns[1].control.subtype || \'\' : \'column 2\'}}</button></div></div></div><div class=\"row linesList\" ng-switch-when=3><div class=\"col-md-12 lineCommandButtons\" ng-show=\"configuration.lines.length > 1\"><button class=btn ng-class=\"{\'btn-warning\':($index + 1) !== configuration.activeLine, \'btn-success\': ($index + 1) === configuration.activeLine}\" ng-click=\"setActiveLineNumber($index + 1)\"><i class=fa ng-class=\"{\'fa-square-o\': ($index + 1) !== configuration.activeLine, \'fa-check-square-o\': ($index + 1) === configuration.activeLine}\"></i></button></div><div class=col-md-12><div class=\"col-md-4 well\"><button class=\"btn btn-lg btn-block\" ng-class=\"{\'btn-primary\': !line.columns[0].control.edited, \'btn-success\': line.columns[0].control.edited}\" ng-click=\"showModalAddCtrlToColumn(\'\', $index, 0)\">{{line.columns[0].control.type !== \'none\' ? line.columns[0].control.type + \' \' + line.columns[0].control.subtype || \'\' : \'column 1\'}}</button></div><div class=\"col-md-4 well\"><button class=\"btn btn-lg btn-block\" ng-class=\"{\'btn-primary\': !line.columns[1].control.edited, \'btn-success\': line.columns[1].control.edited}\" ng-click=\"showModalAddCtrlToColumn(\'\', $index, 1)\">{{line.columns[1].control.type !== \'none\' ? line.columns[1].control.type + \' \' + line.columns[1].control.subtype || \'\' : \'column 2\'}}</button></div><div class=\"col-md-4 well\"><button class=\"btn btn-lg btn-block\" ng-class=\"{\'btn-primary\': !line.columns[2].control.edited, \'btn-success\': line.columns[2].control.edited}\" ng-click=\"showModalAddCtrlToColumn(\'\', $index, 2)\">{{line.columns[2].control.type !== \'none\' ? line.columns[2].control.type + \' \' + line.columns[2].control.subtype || \'\' : \'column 3\'}}</button></div></div></div></div></li></ul></div></div></div></div></div><div class=animate-switch ng-switch-when=third><div class=col-md-4><div id=commandPanel><div class=\"panel panel-default\"><div class=panel-heading><h3 class=panel-title><i class=\"fa fa-keyboard-o\"></i>&nbsp;{{\'COMMAND_PANEL\' | translate}}</h3></div><div class=panel-body><div class=row><div class=col-xs-12><div class=form-group><label for=inputSubmitButtontext class=\"greyText control-label\">{{\'CUSTOM_SUBMIT_BTN\' | translate}} :</label><div><input type=text class=form-control id=inputSubmitButtontext ng-model=configuration.submitButtonText></div></div></div></div><hr><div class=row><div class=col-xs-12><div class=form-group><label for=inputCancelButtontext class=\"greyText control-label\">{{\'CUSTOM_CANCEL_BTN\' | translate}} :</label><div><input type=text class=form-control id=inputCancelButtontext ng-model=configuration.cancelButtonText></div></div></div></div><hr><div class=row><div class=col-xs-12><div class=form-group><label for=inputNameFormtext class=\"greyText control-label\">{{\'NAME_THIS_FORM\' | translate}} :</label><div><input type=text class=form-control id=inputNameFormtext ng-model=configuration.formName></div></div></div></div><button class=\"btn btn-primary btn-block btn-lg\" ng-click=saveThisForm()>{{\'SAVE_THIS_FORM\' | translate}}</button></div></div></div></div><div class=col-md-8><div id=visualPanel><div class=\"panel panel-default\"><div class=panel-heading><h3 class=panel-title><i class=\"fa fa-thumbs-o-up\"></i>&nbsp;{{\'FINAL_STEP\' | translate}}</h3></div><div class=panel-body><form ng-submit=vm.onSubmit()><formly-form id=saveFormlyFom model=vm.model fields=vm.wfFormFields><span class=pull-right><button class=\"btn btn-primary\" type=submit>{{configuration.submitButtonText}}</button> <button class=\"btn btn-primary\" type=cancel>{{configuration.cancelButtonText}}</button></span></formly-form></form></div></div></div></div></div></div></div></tab><tab active=tab.previewTab.active ng-if=tab.previewTab.tabVisible heading=\"{{\'PREVIEW_TAB\' | translate}}\"><div class=\"panel panel-default\"><div class=panel-body><form ng-submit=vm.onSubmit()><formly-form id=previewFormlyForm model=vm.model fields=vm.wfFormFields><span class=pull-right><button class=\"btn btn-primary\" type=submit>{{configuration.submitButtonText}}</button> <button class=\"btn btn-primary\" type=cancel>{{configuration.cancelButtonText}}</button></span></formly-form></form></div></div><div ng-if=tab.previewTab.modelsVisible class=\"panel panel-default\"><div class=panel-body><p>{{\'DATA_MODEL\' | translate}}</p><pre>\n										{{vm.model | json}}\n									</pre></div></div><div ng-if=tab.previewTab.modelsVisible class=\"panel panel-default\"><div class=panel-body><p>{{\'FIELDS_MODEL\' | translate}}</p><pre>\n										{{vm.wfFormFieldsOnlyNeededProperties | json}}\n									</pre></div></div></tab></tabset></div></div></section><hr></div></div></section>");
-$templateCache.put("editModalTemplate.html","<div class=modal-header><h3 class=\"modal-title greyText\">{{\'SELECT_A_CTRL\' | translate}}</h3></div><div class=modal-body><hr><div class=row><div class=\"col-xs-12 col-sm-12 col-md-12 col-lg-12\"><h5 class=greyText><i class=\"fa fa-filter\"></i>&nbsp; {{\'SELECT_CTRL_IN_LIST\' | translate}} :</h5></div><div class=\"col-xs-12 col-sm-12 col-md-12 col-lg-12\"><ol class=\"nya-bs-select col-xs-12 col-sm-12 col-md-12 col-lg-12\" ng-model=modelNyaSelect data-live-search=false><li nya-bs-option=\"option in nyaSelectFiltered.controls group by option.group\"><span class=\"dropdown-header greyText\">{{$group}}</span><a ng-click=selectThisControl(option.id)><span>{{ option.name }}</span> <span class=\"glyphicon glyphicon-ok check-mark\"></span></a></li></ol></div></div><hr><div ng-switch=\"\" on=nyaSelect.selectedControl><div ng-switch-when=none><div class=row><div class=col-sm-12><h5 class=\"text-center texteRouge\"><i class=\"fa fa-arrow-up\"></i>&nbsp; {{\'SELECT_A_CTRL\' | translate}}</h5></div></div></div><div ng-switch-when=empty><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-eye\"></i>&nbsp; {{\'PREVIEW_TAB\' | translate}} :</h5></div></div><hr><div class=row><div class=col-sm-12><h5 class=\"text-center greyText\">{{\'COL_WILL_BE_BLANK\' | translate}}</h5></div></div></div></div></div><div ng-switch-when=Header><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-eye\"></i>&nbsp; {{\'PREVIEW_TAB\' | translate}} :</h5></div></div><hr><div class=row><div class=col-md-12><div class=form-group><div><h2 class=text-center>{{nyaSelect.temporyConfig.formlyDesciption}}</h2><hr></div></div></div></div></div></div><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-pencil-square-o\"></i>&nbsp; {{\'EDIT_PROPERTIES\' | translate}} :</h5></div></div><hr><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextDescriptionUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'HEADER_TEXT\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyDesciption id=inputHeaderTextUpdate placeholder=\"{{\'ADD_EDIT_HEADER_HERE\' | translate}}\"></div></div></div></div></div></div><div ng-switch-when=Subtitle><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-eye\"></i>&nbsp; {{\'PREVIEW_TAB\' | translate}} :</h5></div></div><hr><div class=row><div class=col-md-12><div class=form-group><div><h4 class=text-center>{{nyaSelect.temporyConfig.formlyPlaceholder}}</h4><hr></div></div></div></div></div></div><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-pencil-square-o\"></i>&nbsp; {{\'EDIT_PROPERTIES\' | translate}} :</h5></div></div><hr><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputSubTitleTextUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'SUBTITLE_TEXT\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyPlaceholder id=inputSubTitleTextUpdate placeholder=\"{{\'ADD_EDIT_SUBTIL_HERE\' | translate}}\"></div></div></div></div></div></div><div ng-switch-when=TextInput><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-eye\"></i>&nbsp; {{\'PREVIEW_TAB\' | translate}} :</h5></div></div><hr><div class=row><div class=col-md-12><div class=form-group><label for=inputText class=\"control-label textControlLabel\">{{nyaSelect.temporyConfig.formlyLabel}}<span ng-if=nyaSelect.temporyConfig.formlyRequired class=textControlLabel>*</span></label><div><input type=text class=form-control id=inputText placeholder={{nyaSelect.temporyConfig.formlyPlaceholder}}><p class=help-block>{{nyaSelect.temporyConfig.formlyDesciption}}</p></div></div></div></div></div></div><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-pencil-square-o\"></i>&nbsp; {{\'EDIT_PROPERTIES\' | translate}} :</h5></div></div><hr><div class=row><div class=form-group><label for=inputTextLabelUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'LABEL_TEXT\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyLabel id=inputTextLabelUpdate placeholder=\"{{\'ADD_EDIT_LABEL_HERE\' | translate}}\"></div></div></div><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextplaceholderUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'PLACEHOLDER\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyPlaceholder id=inputTextplaceholderUpdate placeholder=\"{{\'ADD_EDIT_PLACEHOLD\' | translate}}\"></div></div></div><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextRequiredUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'REQUIRED\' | translate}} :</label><div class=col-lg-9><div class=checkboxCssCorrection>&nbsp;</div><input type=checkbox ng-model=nyaSelect.temporyConfig.formlyRequired id=inputTextRequiredUpdate></div></div></div><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextDescriptionUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'DESCRIPTION\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyDesciption id=inputTextDescriptionUpdate placeholder=\"{{\'ADDEDIT_DESCRIPTION\' | translate}}\"></div></div></div></div></div></div><div ng-switch-when=Password><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-eye\"></i>&nbsp; {{\'PREVIEW_TAB\' | translate}} :</h5></div></div><hr><div class=row><div class=col-md-12><div class=form-group><label for=inputPassword class=\"control-label textControlLabel\">{{nyaSelect.temporyConfig.formlyLabel}}<span ng-if=nyaSelect.temporyConfig.formlyRequired class=textControlLabel>*</span></label><div><input type=password class=form-control id=inputPassword placeholder={{nyaSelect.temporyConfig.formlyPlaceholder}}><p class=help-block>{{nyaSelect.temporyConfig.formlyDesciption}}</p></div></div></div></div></div></div><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-pencil-square-o\"></i>&nbsp; {{\'EDIT_PROPERTIES\' | translate}} :</h5></div></div><hr><div class=row><div class=form-group><label for=inputTextLabelUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'LABEL_TEXT\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyLabel id=inputTextLabelUpdate placeholder=\"{{\'ADD_EDIT_LABEL_HERE\' | translate}}\"></div></div></div><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextplaceholderUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'PLACEHOLDER\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyPlaceholder id=inputTextplaceholderUpdate placeholder=\"{{\'ADD_EDIT_PLACEHOLD\' | translate}}\"></div></div></div><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextRequiredUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'REQUIRED\' | translate}} :</label><div class=col-lg-9><div class=checkboxCssCorrection>&nbsp;</div><input type=checkbox ng-model=nyaSelect.temporyConfig.formlyRequired id=inputTextRequiredUpdate></div></div></div><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextDescriptionUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'DESCRIPTION\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyDesciption id=inputTextDescriptionUpdate placeholder=\"{{\'ADDEDIT_DESCRIPTION\' | translate}}\"></div></div></div></div></div></div><div ng-switch-when=Email><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-eye\"></i>&nbsp; {{\'PREVIEW_TAB\' | translate}} :</h5></div></div><hr><div class=row><div class=col-md-12><div class=form-group><label for=inputEmail class=\"control-label textControlLabel\">{{nyaSelect.temporyConfig.formlyLabel}}<span ng-if=nyaSelect.temporyConfig.formlyRequired class=textControlLabel>*</span></label><div><input type=text class=form-control id=inputEmail placeholder={{nyaSelect.temporyConfig.formlyPlaceholder}}><p class=help-block>{{nyaSelect.temporyConfig.formlyDesciption}}</p></div></div></div></div></div></div><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-pencil-square-o\"></i>&nbsp; {{\'EDIT_PROPERTIES\' | translate}} :</h5></div></div><hr><div class=row><div class=form-group><label for=inputTextLabelUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'LABEL_TEXT\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyLabel id=inputTextLabelUpdate placeholder=\"{{\'ADD_EDIT_LABEL_HERE\' | translate}}\"></div></div></div><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextplaceholderUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'PLACEHOLDER\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyPlaceholder id=inputTextplaceholderUpdate placeholder=\"{{\'ADD_EDIT_PLACEHOLD\' | translate}}\"></div></div></div><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextRequiredUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'REQUIRED\' | translate}} :</label><div class=col-lg-9><div class=checkboxCssCorrection>&nbsp;</div><input type=checkbox ng-model=nyaSelect.temporyConfig.formlyRequired id=inputTextRequiredUpdate></div></div></div><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextDescriptionUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'DESCRIPTION\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyDesciption id=inputTextDescriptionUpdate placeholder=\"{{\'ADDEDIT_DESCRIPTION\' | translate}}\"></div></div></div></div></div></div><div ng-switch-when=Date><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-eye\"></i>&nbsp; {{\'PREVIEW_TAB\' | translate}} :</h5></div></div><hr><div class=row><div class=col-md-12><div class=form-group><label for=inputDate class=\"control-label textControlLabel\">{{nyaSelect.temporyConfig.formlyLabel}}<span ng-if=nyaSelect.temporyConfig.formlyRequired class=textControlLabel>*</span></label><div><div class=input-group><span class=input-group-addon><i class=\"glyphicon glyphicon-calendar\"></i></span> <input type=text class=form-control datepicker-popup={{nyaSelect.temporyConfig.datepickerPopup}} ng-model=demodt.dt is-open=demodt.opened min-date=demodt.minDate max-date=\"\'2099-12-31\'\" datepicker-options=dateOptions date-disabled=\"disabled(date, mode)\" close-text=Close ng-click=open($event)></div><p></p><p class=help-block>{{nyaSelect.temporyConfig.formlyDesciption}}</p></div></div></div></div></div></div><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-pencil-square-o\"></i>&nbsp; {{\'EDIT_PROPERTIES\' | translate}} :</h5></div></div><hr><div class=row><div class=form-group><label class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'DATE_FORMAT\' | translate}} :</label><div class=col-lg-9><ol class=\"nya-bs-select col-sm-12 col-xs-12 col-md-12 col-lg12\" ng-model=nyaSelect.temporyConfig.datepickerPopup id=dateformatSelect><li class=nya-bs-option nya-bs-option=\"dateformat in demodt.formats\" value=dateformat><a>{{dateformat}}</a></li></ol></div></div></div><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextLabelUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'LABEL_TEXT\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyLabel id=inputTextLabelUpdate placeholder=\"{{\'ADD_EDIT_LABEL_HERE\' | translate}}\"></div></div></div><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextRequiredUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'REQUIRED\' | translate}} :</label><div class=col-lg-9><div class=checkboxCssCorrection>&nbsp;</div><input type=checkbox ng-model=nyaSelect.temporyConfig.formlyRequired id=inputTextRequiredUpdate></div></div></div><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextDescriptionUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'DESCRIPTION\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyDesciption id=inputTextDescriptionUpdate placeholder=\"{{\'ADDEDIT_DESCRIPTION\' | translate}}\"></div></div></div></div></div></div><div ng-switch-when=Texarea><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-eye\"></i>&nbsp; {{\'PREVIEW_TAB\' | translate}} :</h5></div></div><hr><div class=row><div class=col-md-12><div class=form-group><label for=textArea class=\"control-label textControlLabel\">{{nyaSelect.temporyConfig.formlyLabel}}<span ng-if=nyaSelect.temporyConfig.formlyRequired class=textControlLabel>*</span></label><div><textarea class=form-control ng-model=model[options.key] rows=3 id=textArea></textarea><p class=help-block>{{nyaSelect.temporyConfig.formlyDesciption}}</p></div></div></div></div></div></div><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-pencil-square-o\"></i>&nbsp; {{\'EDIT_PROPERTIES\' | translate}} :</h5></div></div><hr><div class=row><div class=form-group><label for=inputTextLabelUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'LABEL_TEXT\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyLabel id=inputTextLabelUpdate placeholder=\"{{\'ADD_EDIT_LABEL_HERE\' | translate}}\"></div></div></div><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextRequiredUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'REQUIRED\' | translate}} :</label><div class=col-lg-9><div class=checkboxCssCorrection>&nbsp;</div><input type=checkbox ng-model=nyaSelect.temporyConfig.formlyRequired id=inputTextRequiredUpdate></div></div></div><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextDescriptionUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'DESCRIPTION\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyDesciption id=inputTextDescriptionUpdate placeholder=\"{{\'ADDEDIT_DESCRIPTION\' | translate}}\"></div></div></div></div></div></div><div ng-switch-when=RichTextEditor><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-eye\"></i>&nbsp; {{\'PREVIEW_TAB\' | translate}} :</h5></div></div><hr><div class=row><div class=col-md-12><div class=form-group><label for=RichTextEditor class=\"control-label textControlLabel\">{{nyaSelect.temporyConfig.formlyLabel}}<span ng-if=nyaSelect.temporyConfig.formlyRequired class=textControlLabel>*</span></label><div><text-angular ng-model=model[options.key]></text-angular><p class=help-block>{{nyaSelect.temporyConfig.formlyDesciption}}</p></div></div></div></div></div></div><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-pencil-square-o\"></i>&nbsp; {{\'EDIT_PROPERTIES\' | translate}} :</h5></div></div><hr><div class=row><div class=form-group><label for=inputTextDescriptionUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'DESCRIPTION\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyDesciption id=inputTextDescriptionUpdate placeholder=\"{{\'ADDEDIT_DESCRIPTION\' | translate}}\"></div></div></div></div></div></div><div ng-switch-when=Radio><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-eye\"></i>&nbsp; {{\'PREVIEW_TAB\' | translate}} :</h5></div></div><hr><div class=row><div class=col-md-12><div class=form-group><label for=basicSelect class=\"control-label textControlLabel\">{{nyaSelect.temporyConfig.formlyLabel}}<span ng-if=nyaSelect.temporyConfig.formlyRequired class=textControlLabel>*</span></label><div><div class=radio ng-repeat=\"radioRow in radioRowCollection.rows\"><label><input type=radio name=optionsRadios id=\"{{\'optionsRadio-\' + $index}}\" value=$index checked=\"\"> {{radioRow.option}}</label></div><p class=help-block>{{nyaSelect.temporyConfig.formlyDesciption}}</p></div></div></div></div></div></div><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-pencil-square-o\"></i>&nbsp; {{\'EDIT_PROPERTIES\' | translate}} :</h5></div></div><hr><div class=row><div class=\"col-lg-3 col-md-3\"><label for=radioRowCollection class=\"control-label greyText editPropertiesLabel\">{{\'ADD_NEW_RADIO\' | translate}} :</label></div></div><div class=row><div><div class=form-group><div class=\"col-sm-9 col-xs-9 col-md-9 col-lg-9\"><input type=text class=form-control id=inputAddNewRadioOption placeholder=\"{{\'ADD_RADIO_PLACEHOLD\' | translate}}\" ng-model=newOptionRadio.saisie></div><div class=\"col-sm-3 col-xs-3 col-md-3 col-lg-3\"><button class=\"btn btn-primary\" ng-click=addNewOptionRadio()>{{\'ADD\' | translate}}</button></div></div></div></div><div class=row><div class=\"col-lg-3 col-md-3\"><label for=radioRowCollection class=\"control-label greyText editPropertiesLabel\">{{\'EDIT_REMOVE_RADIO\' | translate}} :</label></div></div><div class=row><div class=form-group><div class-\"col-lg-12=\"\" col-md-12=\"\" col-sm-12=\"\" col-xs-12\"=\"\"><div class=container><div ng-show=\"radioRowCollection.rows.length === 0\"><h5 class=\"text-center greyText\"><em>- {{\'NO_RADIO_ADD_NEW\' | translate}} -</em></h5></div><table ng-if=\"radioRowCollection.rows.length > 0\" class=\"table table-striped\"><thead><tr><th st-ratio=20>{{\'ORDER\' | translate}}</th><th st-ratio=55>{{\'OPTION\' | translate}}</th><th st-ratio=25></th></tr><tr><th st-ratio=20></th><th st-ratio=55><input ng-model=radioFilter placeholder=\"{{\'SEARCH_4_OPTION\' | translate}}\" class=\"input-sm form-control\" type=search></th><th st-ratio=25></th></tr></thead><tbody><tr ng-repeat=\"radioRow in radioRowCollection.rows | filter:radioFilter as radioRow\"><td st-ratio=20>{{$index}}</td><td st-ratio=55>{{radioRow.option}}</td><td st-ratio=25><div class=pull-right><button class=\"btn btn-primary\" ng-click=upThisRadioRow($index)><i class=\"fa fa-arrow-up\"></i></button> <button class=\"btn btn-primary\" ng-click=downThisRadioRow($index)><i class=\"fa fa-arrow-down\"></i></button> <button class=\"btn btn-danger\" ng-click=removeRadioRow($index)><i class=\"fa fa-trash-o\"></i></button></div></td></tr></tbody></table></div></div></div></div><hr><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextLabelUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'LABEL_TEXT\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyLabel id=inputTextLabelUpdate placeholder=\"{{\'ADD_EDIT_LABEL_HERE\' | translate}}\"></div></div></div><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextRequiredUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'REQUIRED\' | translate}} :</label><div class=col-lg-9><div class=checkboxCssCorrection>&nbsp;</div><input type=checkbox ng-model=nyaSelect.temporyConfig.formlyRequired id=inputTextRequiredUpdate></div></div></div><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextDescriptionUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'DESCRIPTION\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyDesciption id=inputTextDescriptionUpdate placeholder=\"{{\'ADDEDIT_DESCRIPTION\' | translate}}\"></div></div></div></div></div></div><div ng-switch-when=Checkbox><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-eye\"></i>&nbsp; {{\'PREVIEW_TAB\' | translate}} :</h5></div></div><hr><div class=row><div class=col-md-12><div class=form-group><div class=col-md-12><div class=checkbox><label><input type=checkbox id=checkBox> <span class=blackText>{{nyaSelect.temporyConfig.formlyLabel}}</span><span ng-if=nyaSelect.temporyConfig.formlyRequired class=textControlLabel>*</span></label></div><p class=help-block>{{nyaSelect.temporyConfig.formlyDesciption}}</p></div></div></div></div></div></div><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-pencil-square-o\"></i>&nbsp; {{\'EDIT_PROPERTIES\' | translate}} :</h5></div></div><hr><div class=row><div class=form-group><label for=inputTextLabelUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'LABEL_TEXT\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyLabel id=inputTextLabelUpdate placeholder=\"{{\'ADD_EDIT_LABEL_HERE\' | translate}}\"></div></div></div><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextRequiredUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'REQUIRED\' | translate}} :</label><div class=col-lg-9><div class=checkboxCssCorrection>&nbsp;</div><input type=checkbox ng-model=nyaSelect.temporyConfig.formlyRequired id=inputTextRequiredUpdate></div></div></div><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextDescriptionUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'DESCRIPTION\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyDesciption id=inputTextDescriptionUpdate placeholder=\"{{\'ADDEDIT_DESCRIPTION\' | translate}}\"></div></div></div></div></div></div><div ng-switch-when=BasicSelect><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-eye\"></i>&nbsp; {{\'PREVIEW_TAB\' | translate}} :</h5></div></div><hr><div class=row><div class=col-md-12><div class=form-group><label for=basicSelect class=\"control-label textControlLabel\">{{nyaSelect.temporyConfig.formlyLabel}}<span ng-if=nyaSelect.temporyConfig.formlyRequired class=textControlLabel>*</span></label><div><ol class=\"nya-bs-select col-sm-12 col-xs-12 col-md-12 col-lg12\" ng-model=modelbasicSelect id=basicSelect disabled=\"basicSelectRowCollection.rows.length === 0\"><li class=nya-bs-option nya-bs-option=\"basicSelectRow in basicSelectRowCollection.rows\" value=$index><a>{{basicSelectRow.option}}</a></li></ol><p class=help-block>{{nyaSelect.temporyConfig.formlyDesciption}}</p></div></div></div></div></div></div><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-pencil-square-o\"></i>&nbsp; {{\'EDIT_PROPERTIES\' | translate}} :</h5></div></div><hr><div class=row><div class=\"col-lg-3 col-md-3\"><label for=basicSelectRowCollection class=\"control-label greyText editPropertiesLabel\">{{\'ADD_NEW_OPTIONS\' | translate}} :</label></div></div><div class=row><div><div class=form-group><div class=\"col-sm-9 col-xs-9 col-md-9 col-lg-9\"><input type=text class=form-control id=inputAddNewBasicOption placeholder=\"{{\'ADD_A_NEW_OPTION\' | translate}}\" ng-model=newOptionBasicSelect.saisie></div><div class=\"col-sm-3 col-xs-3 col-md-3 col-lg-3\"><button class=\"btn btn-primary\" ng-click=addNewOptionBasicSelect()>{{\'ADD\' | translate}}</button></div></div></div></div><div class=row><div class=\"col-lg-3 col-md-3\"><label class=\"control-label greyText editPropertiesLabel\">{{\'EDIT_REMOVE_OPTIONS\' | translate}} :</label></div></div><div class=row><div class=form-group><div class-\"col-lg-12=\"\" col-md-12=\"\" col-sm-12=\"\" col-xs-12\"=\"\"><div class=container><div ng-if=\"basicSelectRowCollection.rows.length === 0\"><h5 class=\"text-center greyText\"><em>- {{\'NO_OPTION_ADD_NEW\' | translate}} -</em></h5></div><table ng-if=\"basicSelectRowCollection.rows.length > 0\" class=\"table table-striped\"><thead><tr><th st-ratio=20>{{\'ORDER\' | translate}}</th><th st-ratio=55>{{\'OPTION\' | translate}}</th><th st-ratio=25></th></tr><tr><th st-ratio=20></th><th st-ratio=55><input ng-model=basicSelectFilter placeholder=\"{{\'SEARCH_4_OPTION\' | translate}}\" class=\"input-sm form-control\" type=search></th><th st-ratio=25></th></tr></thead><tbody><tr ng-repeat=\"basicSelectRow in basicSelectRowCollection.rows | filter:basicSelectFilter as basicSelectRow\"><td st-ratio=20>{{$index}}</td><td st-ratio=55>{{basicSelectRow.option}}</td><td st-ratio=25><div class=pull-right><button class=\"btn btn-primary\" ng-click=upThisRow($index)><i class=\"fa fa-arrow-up\"></i></button> <button class=\"btn btn-primary\" ng-click=downThisRow($index)><i class=\"fa fa-arrow-down\"></i></button> <button class=\"btn btn-danger\" ng-click=removeRow($index)><i class=\"fa fa-trash-o\"></i></button></div></td></tr></tbody></table></div></div></div></div><hr><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextDescriptionUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'DESCRIPTION\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyDesciption id=inputTextDescriptionUpdate placeholder=\"{{\'ADDEDIT_DESCRIPTION\' | translate}}\"></div></div></div></div></div></div><div ng-switch-when=GroupedSelect><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-eye\"></i>&nbsp; {{\'PREVIEW_TAB\' | translate}} :</h5></div></div><hr><div class=row><div class=col-md-12><div class=form-group><label for=select class=\"control-label textControlLabel\">{{nyaSelect.temporyConfig.formlyLabel}}<span ng-if=nyaSelect.temporyConfig.formlyRequired class=textControlLabel>*</span></label><div><ol class=\"nya-bs-select col-sm-12 col-xs-12 col-md-12 col-lg12\" ng-model=modelGroupedSelect data-live-search=true disabled=\"groupedSelectRowCollection.rows.length === 0\"><li nya-bs-option=\"groupedSelectRow in groupedSelectRowCollection.rows group by groupedSelectRow.group\" value=$index><span class=dropdown-header>{{groupedSelectRow.group}}</span> <a><span>{{groupedSelectRow.option}}</span> <span class=\"glyphicon glyphicon-ok check-mark\"></span></a></li></ol><p class=help-block>{{nyaSelect.temporyConfig.formlyDesciption}}</p></div></div></div></div></div></div><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-pencil-square-o\"></i>&nbsp; {{\'EDIT_PROPERTIES\' | translate}} :</h5></div></div><hr><div class=row><div class=\"col-lg-3 col-md-3\"><label for=groupedSelectRowCollection class=\"control-label greyText editPropertiesLabel\">{{\'ADD_NEW_OPTIONS\' | translate}} :</label></div></div><div class=row><div><div class=form-group><div class=\"col-sm-9 col-xs-9 col-md-9 col-lg-9\"><input type=text class=form-control id=inputAddNewGroupedOption placeholder=\"{{\'ADD_A_NEW_OPTION\' | translate}}\" ng-model=newOptionGroupedSelect.saisie></div><div class=\"col-sm-3 col-xs-3 col-md-3 col-lg-3\"><button class=\"btn btn-primary\" ng-click=addNewOptionGroupedSelect()>{{\'ADD\' | translate}}</button></div></div></div></div><div class=row><div class=\"col-lg-3 col-md-3\"><label for=groupedSelectRowCollection class=\"control-label greyText editPropertiesLabel\">{{\'ADD_NEW_GROUPS\' | translate}} :</label></div></div><div class=row><div><div class=form-group><div class=\"col-sm-9 col-xs-9 col-md-9 col-lg-9\"><input id=inputAddNewGroupGroupedOption type=text class=form-control ng-model=newGroupGroupedSelect.saisie placeholder=\"{{\'ADD_A_NEW_GROUP\' | translate}}\"></div><div class=\"col-sm-3 col-xs-3 col-md-3 col-lg-3\"><button class=\"btn btn-primary\" ng-click=addNewGroupToGroupedSelect()>{{\'ADD\' | translate}}</button></div></div></div></div><div class=row><div class=\"col-lg-3 col-md-3\"><label class=\"control-label greyText editPropertiesLabel\">{{\'EDIT_GROUPS_OPTIONS\' | translate}} :</label></div></div><div class=row><div class=form-group><div class-\"col-lg-12=\"\" col-md-12=\"\" col-sm-12=\"\" col-xs-12\"=\"\"><div class=container><div ng-if=\"groupedSelectRowCollection.rows.length === 0\"><h5 class=\"text-center greyText\"><em>- {{\'NO_OPTION_ADD_NEW\' | translate}} -</em></h5></div><table ng-if=\"groupedSelectRowCollection.rows.length > 0\" class=\"table table-striped\"><thead><tr><th st-ratio=20>{{\'ORDER\' | translate}}</th><th st-ratio=25>{{\'GROUP\' | translate}}</th><th st-ratio=30>{{\'OPTION\' | translate}}</th><th st-ratio=25></th></tr><tr><th st-ratio=20></th><th st-ratio=25></th><th st-ratio=30><input ng-model=groupedSelectFilter placeholder=\"{{\'SEARCH_4_OPTION\' | translate}}\" class=\"input-sm form-control\" type=search></th><th st-ratio=25></th></tr></thead><tbody><tr ng-repeat=\"groupedSelectRow in groupedSelectRowCollection.rows | filter:groupedSelectFilter as groupedSelectRow\"><td st-ratio=20>{{$index}}</td><td st-ratio=25><div ng-if=\"groupSelectGroupClick.showList === true\"><div ng-if=\"GroupedSelectGroups.list.length === 0\"><p class=\"text-left noGroupText\">- {{\'NO_GROUP_ADD_NEW\' | translate}} -</p></div><div ng-if=\"GroupedSelectGroups.list.length > 0\"><ol class=\"nya-bs-select col-sm-12 col-xs-12 col-md-12 col-lg12 editGroupedSelectnyaSelect\" ng-model=groupedSelectRow.group id=modelGroupedOptionGroupedChoose disabled=\"GroupedSelectGroups.list.length === 0\"><li class=nya-bs-option nya-bs-option=\"GroupedSelectGroup in GroupedSelectGroups.list\" value=GroupedSelectGroup><a>{{GroupedSelectGroup}}</a></li></ol></div></div><div ng-if=\"groupSelectGroupClick.showList === false\">{{groupedSelectRow.group}}</div></td><td st-ratio=30>{{groupedSelectRow.option}}</td><td st-ratio=25><div class=pull-right><button class=\"btn btn-primary\" ng-click=upThisGroupedSelectRow($index)><i class=\"fa fa-arrow-up\"></i></button> <button class=\"btn btn-primary\" ng-click=downThisGroupedSelectRow($index)><i class=\"fa fa-arrow-down\"></i></button> <button class=\"btn btn-warning\" ng-click=showGroupListToChoose()><i class=\"fa fa-pencil-square-o\"></i></button> <button class=\"btn btn-danger\" ng-click=removeGroupedSelectRow($index)><i class=\"fa fa-trash-o\"></i></button></div></td></tr></tbody></table></div></div></div></div><hr><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextDescriptionUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'DESCRIPTION\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyDesciption id=inputTextDescriptionUpdate placeholder=\"{{\'ADDEDIT_DESCRIPTION\' | translate}}\"></div></div></div></div></div></div></div></div><div class=modal-footer><button class=\"btn btn-primary\" ng-class=\"{\'disabled\': nyaSelect.selectedControl === \'none\'}\" ng-click=ok()>{{\'OK\' | translate}}</button> <button class=\"btn btn-warning\" ng-click=cancel()>{{\'CANCEL\' | translate}}</button></div>");}]);
+$templateCache.put("editModalTemplate.html","<div class=modal-header><h3 class=\"modal-title greyText\">{{\'SELECT_A_CTRL\' | translate}}</h3></div><div class=modal-body><hr><div class=row><div class=\"col-xs-12 col-sm-12 col-md-12 col-lg-12\"><h5 class=greyText><i class=\"fa fa-filter\"></i>&nbsp; {{\'SELECT_CTRL_IN_LIST\' | translate}} :</h5></div><div class=\"col-xs-12 col-sm-12 col-md-12 col-lg-12\"><ol class=\"nya-bs-select col-xs-12 col-sm-12 col-md-12 col-lg-12\" ng-model=modelNyaSelect data-live-search=false><li nya-bs-option=\"option in nyaSelectFiltered.controls group by option.group\"><span class=\"dropdown-header greyText\">{{$group}}</span><a ng-click=selectThisControl(option.id)><span>{{ option.name }}</span> <span class=\"glyphicon glyphicon-ok check-mark\"></span></a></li></ol></div></div><hr><div ng-switch=\"\" on=nyaSelect.selectedControl><div ng-switch-when=none><div class=row><div class=col-sm-12><h5 class=\"text-center texteRouge\"><i class=\"fa fa-arrow-up\"></i>&nbsp; {{\'SELECT_A_CTRL\' | translate}}</h5></div></div></div><div ng-switch-when=empty><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-eye\"></i>&nbsp; {{\'PREVIEW_TAB\' | translate}} :</h5></div></div><hr><div class=row><div class=col-sm-12><h5 class=\"text-center greyText\">{{\'COL_WILL_BE_BLANK\' | translate}}</h5></div></div></div></div></div><div ng-switch-when=Header><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-eye\"></i>&nbsp; {{\'PREVIEW_TAB\' | translate}} :</h5></div></div><hr><div class=row><div class=col-md-12><div class=form-group><div><h2 class=text-center>{{nyaSelect.temporyConfig.formlyDesciption}}</h2><hr></div></div></div></div></div></div><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-pencil-square-o\"></i>&nbsp; {{\'EDIT_PROPERTIES\' | translate}} :</h5></div></div><hr><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextDescriptionUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'HEADER_TEXT\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyDesciption id=inputHeaderTextUpdate placeholder=\"{{\'ADD_EDIT_HEADER_HERE\' | translate}}\"></div></div></div></div></div></div><div ng-switch-when=Subtitle><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-eye\"></i>&nbsp; {{\'PREVIEW_TAB\' | translate}} :</h5></div></div><hr><div class=row><div class=col-md-12><div class=form-group><div><h4 class=text-center>{{nyaSelect.temporyConfig.formlyPlaceholder}}</h4><hr></div></div></div></div></div></div><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-pencil-square-o\"></i>&nbsp; {{\'EDIT_PROPERTIES\' | translate}} :</h5></div></div><hr><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputSubTitleTextUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'SUBTITLE_TEXT\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyPlaceholder id=inputSubTitleTextUpdate placeholder=\"{{\'ADD_EDIT_SUBTIL_HERE\' | translate}}\"></div></div></div></div></div></div><div ng-switch-when=TextInput><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-eye\"></i>&nbsp; {{\'PREVIEW_TAB\' | translate}} :</h5></div></div><hr><div class=row><div class=col-md-12><div class=form-group><label for=inputText class=\"control-label textControlLabel\">{{nyaSelect.temporyConfig.formlyLabel}}<span ng-if=nyaSelect.temporyConfig.formlyRequired class=textControlLabel>*</span></label><div><input type=text class=form-control id=inputText placeholder={{nyaSelect.temporyConfig.formlyPlaceholder}}><p class=help-block>{{nyaSelect.temporyConfig.formlyDesciption}}</p></div></div></div></div></div></div><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-pencil-square-o\"></i>&nbsp; {{\'EDIT_PROPERTIES\' | translate}} :</h5></div></div><hr><div class=row><div class=form-group><label for=inputTextLabelUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'LABEL_TEXT\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyLabel id=inputTextLabelUpdate placeholder=\"{{\'ADD_EDIT_LABEL_HERE\' | translate}}\"></div></div></div><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextplaceholderUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'PLACEHOLDER\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyPlaceholder id=inputTextplaceholderUpdate placeholder=\"{{\'ADD_EDIT_PLACEHOLD\' | translate}}\"></div></div></div><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextRequiredUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'REQUIRED\' | translate}} :</label><div class=col-lg-9><div class=checkboxCssCorrection>&nbsp;</div><input type=checkbox ng-model=nyaSelect.temporyConfig.formlyRequired id=inputTextRequiredUpdate></div></div></div><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextDescriptionUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'DESCRIPTION\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyDesciption id=inputTextDescriptionUpdate placeholder=\"{{\'ADDEDIT_DESCRIPTION\' | translate}}\"></div></div></div></div></div></div><div ng-switch-when=FileUpload><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-eye\"></i>&nbsp; {{\'PREVIEW_TAB\' | translate}} :</h5></div></div><hr><div class=row><div class=col-md-12><div class=form-group><label for=inputText class=\"control-label textControlLabel\">{{nyaSelect.temporyConfig.formlyLabel}}<span ng-if=nyaSelect.temporyConfig.formlyRequired class=textControlLabel>*</span></label><div class=input-group><input type=text class=form-control ngf-select=\"\" ng-model=\"model[options.key || index]\" name={{id}}> <span class=input-group-addon><i class=\"glyphicon glyphicon-upload\"></i></span></div><p class=help-block>{{nyaSelect.temporyConfig.formlyDesciption}}</p></div></div></div></div></div><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-pencil-square-o\"></i>&nbsp; {{\'EDIT_PROPERTIES\' | translate}} :</h5></div></div><hr><div class=row><div class=form-group><label for=inputTextLabelUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'LABEL_TEXT\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyLabel id=inputTextLabelUpdate placeholder=\"{{\'ADD_EDIT_LABEL_HERE\' | translate}}\"></div></div></div><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextRequiredUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'REQUIRED\' | translate}} :</label><div class=col-lg-9><div class=checkboxCssCorrection>&nbsp;</div><input type=checkbox ng-model=nyaSelect.temporyConfig.formlyRequired id=inputTextRequiredUpdate></div></div></div><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextDescriptionUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'DESCRIPTION\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyDesciption id=inputTextDescriptionUpdate placeholder=\"{{\'ADDEDIT_DESCRIPTION\' | translate}}\"></div></div></div></div></div></div><div ng-switch-when=Password><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-eye\"></i>&nbsp; {{\'PREVIEW_TAB\' | translate}} :</h5></div></div><hr><div class=row><div class=col-md-12><div class=form-group><label for=inputPassword class=\"control-label textControlLabel\">{{nyaSelect.temporyConfig.formlyLabel}}<span ng-if=nyaSelect.temporyConfig.formlyRequired class=textControlLabel>*</span></label><div><input type=password class=form-control id=inputPassword placeholder={{nyaSelect.temporyConfig.formlyPlaceholder}}><p class=help-block>{{nyaSelect.temporyConfig.formlyDesciption}}</p></div></div></div></div></div></div><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-pencil-square-o\"></i>&nbsp; {{\'EDIT_PROPERTIES\' | translate}} :</h5></div></div><hr><div class=row><div class=form-group><label for=inputTextLabelUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'LABEL_TEXT\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyLabel id=inputTextLabelUpdate placeholder=\"{{\'ADD_EDIT_LABEL_HERE\' | translate}}\"></div></div></div><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextplaceholderUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'PLACEHOLDER\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyPlaceholder id=inputTextplaceholderUpdate placeholder=\"{{\'ADD_EDIT_PLACEHOLD\' | translate}}\"></div></div></div><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextRequiredUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'REQUIRED\' | translate}} :</label><div class=col-lg-9><div class=checkboxCssCorrection>&nbsp;</div><input type=checkbox ng-model=nyaSelect.temporyConfig.formlyRequired id=inputTextRequiredUpdate></div></div></div><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextDescriptionUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'DESCRIPTION\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyDesciption id=inputTextDescriptionUpdate placeholder=\"{{\'ADDEDIT_DESCRIPTION\' | translate}}\"></div></div></div></div></div></div><div ng-switch-when=Email><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-eye\"></i>&nbsp; {{\'PREVIEW_TAB\' | translate}} :</h5></div></div><hr><div class=row><div class=col-md-12><div class=form-group><label for=inputEmail class=\"control-label textControlLabel\">{{nyaSelect.temporyConfig.formlyLabel}}<span ng-if=nyaSelect.temporyConfig.formlyRequired class=textControlLabel>*</span></label><div><input type=text class=form-control id=inputEmail placeholder={{nyaSelect.temporyConfig.formlyPlaceholder}}><p class=help-block>{{nyaSelect.temporyConfig.formlyDesciption}}</p></div></div></div></div></div></div><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-pencil-square-o\"></i>&nbsp; {{\'EDIT_PROPERTIES\' | translate}} :</h5></div></div><hr><div class=row><div class=form-group><label for=inputTextLabelUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'LABEL_TEXT\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyLabel id=inputTextLabelUpdate placeholder=\"{{\'ADD_EDIT_LABEL_HERE\' | translate}}\"></div></div></div><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextplaceholderUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'PLACEHOLDER\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyPlaceholder id=inputTextplaceholderUpdate placeholder=\"{{\'ADD_EDIT_PLACEHOLD\' | translate}}\"></div></div></div><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextRequiredUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'REQUIRED\' | translate}} :</label><div class=col-lg-9><div class=checkboxCssCorrection>&nbsp;</div><input type=checkbox ng-model=nyaSelect.temporyConfig.formlyRequired id=inputTextRequiredUpdate></div></div></div><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextDescriptionUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'DESCRIPTION\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyDesciption id=inputTextDescriptionUpdate placeholder=\"{{\'ADDEDIT_DESCRIPTION\' | translate}}\"></div></div></div></div></div></div><div ng-switch-when=Date><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-eye\"></i>&nbsp; {{\'PREVIEW_TAB\' | translate}} :</h5></div></div><hr><div class=row><div class=col-md-12><div class=form-group><label for=inputDate class=\"control-label textControlLabel\">{{nyaSelect.temporyConfig.formlyLabel}}<span ng-if=nyaSelect.temporyConfig.formlyRequired class=textControlLabel>*</span></label><div><div class=input-group><span class=input-group-addon><i class=\"glyphicon glyphicon-calendar\"></i></span> <input type=text class=form-control datepicker-popup={{nyaSelect.temporyConfig.datepickerPopup}} ng-model=demodt.dt is-open=demodt.opened min-date=demodt.minDate max-date=\"\'2099-12-31\'\" datepicker-options=dateOptions date-disabled=\"disabled(date, mode)\" close-text=Close ng-click=open($event)></div><p></p><p class=help-block>{{nyaSelect.temporyConfig.formlyDesciption}}</p></div></div></div></div></div></div><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-pencil-square-o\"></i>&nbsp; {{\'EDIT_PROPERTIES\' | translate}} :</h5></div></div><hr><div class=row><div class=form-group><label class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'DATE_FORMAT\' | translate}} :</label><div class=col-lg-9><ol class=\"nya-bs-select col-sm-12 col-xs-12 col-md-12 col-lg12\" ng-model=nyaSelect.temporyConfig.datepickerPopup id=dateformatSelect><li class=nya-bs-option nya-bs-option=\"dateformat in demodt.formats\" value=dateformat><a>{{dateformat}}</a></li></ol></div></div></div><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextLabelUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'LABEL_TEXT\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyLabel id=inputTextLabelUpdate placeholder=\"{{\'ADD_EDIT_LABEL_HERE\' | translate}}\"></div></div></div><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextRequiredUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'REQUIRED\' | translate}} :</label><div class=col-lg-9><div class=checkboxCssCorrection>&nbsp;</div><input type=checkbox ng-model=nyaSelect.temporyConfig.formlyRequired id=inputTextRequiredUpdate></div></div></div><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextDescriptionUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'DESCRIPTION\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyDesciption id=inputTextDescriptionUpdate placeholder=\"{{\'ADDEDIT_DESCRIPTION\' | translate}}\"></div></div></div></div></div></div><div ng-switch-when=Texarea><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-eye\"></i>&nbsp; {{\'PREVIEW_TAB\' | translate}} :</h5></div></div><hr><div class=row><div class=col-md-12><div class=form-group><label for=textArea class=\"control-label textControlLabel\">{{nyaSelect.temporyConfig.formlyLabel}}<span ng-if=nyaSelect.temporyConfig.formlyRequired class=textControlLabel>*</span></label><div><textarea class=form-control ng-model=model[options.key] rows=3 id=textArea></textarea><p class=help-block>{{nyaSelect.temporyConfig.formlyDesciption}}</p></div></div></div></div></div></div><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-pencil-square-o\"></i>&nbsp; {{\'EDIT_PROPERTIES\' | translate}} :</h5></div></div><hr><div class=row><div class=form-group><label for=inputTextLabelUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'LABEL_TEXT\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyLabel id=inputTextLabelUpdate placeholder=\"{{\'ADD_EDIT_LABEL_HERE\' | translate}}\"></div></div></div><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextRequiredUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'REQUIRED\' | translate}} :</label><div class=col-lg-9><div class=checkboxCssCorrection>&nbsp;</div><input type=checkbox ng-model=nyaSelect.temporyConfig.formlyRequired id=inputTextRequiredUpdate></div></div></div><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextDescriptionUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'DESCRIPTION\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyDesciption id=inputTextDescriptionUpdate placeholder=\"{{\'ADDEDIT_DESCRIPTION\' | translate}}\"></div></div></div></div></div></div><div ng-switch-when=RichTextEditor><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-eye\"></i>&nbsp; {{\'PREVIEW_TAB\' | translate}} :</h5></div></div><hr><div class=row><div class=col-md-12><div class=form-group><label for=RichTextEditor class=\"control-label textControlLabel\">{{nyaSelect.temporyConfig.formlyLabel}}<span ng-if=nyaSelect.temporyConfig.formlyRequired class=textControlLabel>*</span></label><div><text-angular ng-model=model[options.key]></text-angular><p class=help-block>{{nyaSelect.temporyConfig.formlyDesciption}}</p></div></div></div></div></div></div><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-pencil-square-o\"></i>&nbsp; {{\'EDIT_PROPERTIES\' | translate}} :</h5></div></div><hr><div class=row><div class=form-group><label for=inputTextDescriptionUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'DESCRIPTION\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyDesciption id=inputTextDescriptionUpdate placeholder=\"{{\'ADDEDIT_DESCRIPTION\' | translate}}\"></div></div></div></div></div></div><div ng-switch-when=Radio><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-eye\"></i>&nbsp; {{\'PREVIEW_TAB\' | translate}} :</h5></div></div><hr><div class=row><div class=col-md-12><div class=form-group><label for=basicSelect class=\"control-label textControlLabel\">{{nyaSelect.temporyConfig.formlyLabel}}<span ng-if=nyaSelect.temporyConfig.formlyRequired class=textControlLabel>*</span></label><div><div class=radio ng-repeat=\"radioRow in radioRowCollection.rows\"><label><input type=radio name=optionsRadios id=\"{{\'optionsRadio-\' + $index}}\" value=$index checked=\"\"> {{radioRow.option}}</label></div><p class=help-block>{{nyaSelect.temporyConfig.formlyDesciption}}</p></div></div></div></div></div></div><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-pencil-square-o\"></i>&nbsp; {{\'EDIT_PROPERTIES\' | translate}} :</h5></div></div><hr><div class=row><div class=\"col-lg-3 col-md-3\"><label for=radioRowCollection class=\"control-label greyText editPropertiesLabel\">{{\'ADD_NEW_RADIO\' | translate}} :</label></div></div><div class=row><div><div class=form-group><div class=\"col-sm-9 col-xs-9 col-md-9 col-lg-9\"><input type=text class=form-control id=inputAddNewRadioOption placeholder=\"{{\'ADD_RADIO_PLACEHOLD\' | translate}}\" ng-model=newOptionRadio.saisie></div><div class=\"col-sm-3 col-xs-3 col-md-3 col-lg-3\"><button class=\"btn btn-primary\" ng-click=addNewOptionRadio()>{{\'ADD\' | translate}}</button></div></div></div></div><div class=row><div class=\"col-lg-3 col-md-3\"><label for=radioRowCollection class=\"control-label greyText editPropertiesLabel\">{{\'EDIT_REMOVE_RADIO\' | translate}} :</label></div></div><div class=row><div class=form-group><div class-\"col-lg-12=\"\" col-md-12=\"\" col-sm-12=\"\" col-xs-12\"=\"\"><div class=container><div ng-show=\"radioRowCollection.rows.length === 0\"><h5 class=\"text-center greyText\"><em>- {{\'NO_RADIO_ADD_NEW\' | translate}} -</em></h5></div><table ng-if=\"radioRowCollection.rows.length > 0\" class=\"table table-striped\"><thead><tr><th st-ratio=20>{{\'ORDER\' | translate}}</th><th st-ratio=55>{{\'OPTION\' | translate}}</th><th st-ratio=25></th></tr><tr><th st-ratio=20></th><th st-ratio=55><input ng-model=radioFilter placeholder=\"{{\'SEARCH_4_OPTION\' | translate}}\" class=\"input-sm form-control\" type=search></th><th st-ratio=25></th></tr></thead><tbody><tr ng-repeat=\"radioRow in radioRowCollection.rows | filter:radioFilter as radioRow\"><td st-ratio=20>{{$index}}</td><td st-ratio=55>{{radioRow.option}}</td><td st-ratio=25><div class=pull-right><button class=\"btn btn-primary\" ng-click=upThisRadioRow($index)><i class=\"fa fa-arrow-up\"></i></button> <button class=\"btn btn-primary\" ng-click=downThisRadioRow($index)><i class=\"fa fa-arrow-down\"></i></button> <button class=\"btn btn-danger\" ng-click=removeRadioRow($index)><i class=\"fa fa-trash-o\"></i></button></div></td></tr></tbody></table></div></div></div></div><hr><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextLabelUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'LABEL_TEXT\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyLabel id=inputTextLabelUpdate placeholder=\"{{\'ADD_EDIT_LABEL_HERE\' | translate}}\"></div></div></div><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextRequiredUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'REQUIRED\' | translate}} :</label><div class=col-lg-9><div class=checkboxCssCorrection>&nbsp;</div><input type=checkbox ng-model=nyaSelect.temporyConfig.formlyRequired id=inputTextRequiredUpdate></div></div></div><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextDescriptionUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'DESCRIPTION\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyDesciption id=inputTextDescriptionUpdate placeholder=\"{{\'ADDEDIT_DESCRIPTION\' | translate}}\"></div></div></div></div></div></div><div ng-switch-when=Checkbox><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-eye\"></i>&nbsp; {{\'PREVIEW_TAB\' | translate}} :</h5></div></div><hr><div class=row><div class=col-md-12><div class=form-group><div class=col-md-12><div class=checkbox><label><input type=checkbox id=checkBox> <span class=blackText>{{nyaSelect.temporyConfig.formlyLabel}}</span><span ng-if=nyaSelect.temporyConfig.formlyRequired class=textControlLabel>*</span></label></div><p class=help-block>{{nyaSelect.temporyConfig.formlyDesciption}}</p></div></div></div></div></div></div><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-pencil-square-o\"></i>&nbsp; {{\'EDIT_PROPERTIES\' | translate}} :</h5></div></div><hr><div class=row><div class=form-group><label for=inputTextLabelUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'LABEL_TEXT\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyLabel id=inputTextLabelUpdate placeholder=\"{{\'ADD_EDIT_LABEL_HERE\' | translate}}\"></div></div></div><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextRequiredUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'REQUIRED\' | translate}} :</label><div class=col-lg-9><div class=checkboxCssCorrection>&nbsp;</div><input type=checkbox ng-model=nyaSelect.temporyConfig.formlyRequired id=inputTextRequiredUpdate></div></div></div><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextDescriptionUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'DESCRIPTION\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyDesciption id=inputTextDescriptionUpdate placeholder=\"{{\'ADDEDIT_DESCRIPTION\' | translate}}\"></div></div></div></div></div></div><div ng-switch-when=BasicSelect><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-eye\"></i>&nbsp; {{\'PREVIEW_TAB\' | translate}} :</h5></div></div><hr><div class=row><div class=col-md-12><div class=form-group><label for=basicSelect class=\"control-label textControlLabel\">{{nyaSelect.temporyConfig.formlyLabel}}<span ng-if=nyaSelect.temporyConfig.formlyRequired class=textControlLabel>*</span></label><div><ol class=\"nya-bs-select col-sm-12 col-xs-12 col-md-12 col-lg12\" ng-model=modelbasicSelect id=basicSelect disabled=\"basicSelectRowCollection.rows.length === 0\"><li class=nya-bs-option nya-bs-option=\"basicSelectRow in basicSelectRowCollection.rows\" value=$index><a>{{basicSelectRow.option}}</a></li></ol><p class=help-block>{{nyaSelect.temporyConfig.formlyDesciption}}</p></div></div></div></div></div></div><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-pencil-square-o\"></i>&nbsp; {{\'EDIT_PROPERTIES\' | translate}} :</h5></div></div><hr><div class=row><div class=\"col-lg-3 col-md-3\"><label for=basicSelectRowCollection class=\"control-label greyText editPropertiesLabel\">{{\'ADD_NEW_OPTIONS\' | translate}} :</label></div></div><div class=row><div><div class=form-group><div class=\"col-sm-9 col-xs-9 col-md-9 col-lg-9\"><input type=text class=form-control id=inputAddNewBasicOption placeholder=\"{{\'ADD_A_NEW_OPTION\' | translate}}\" ng-model=newOptionBasicSelect.saisie></div><div class=\"col-sm-3 col-xs-3 col-md-3 col-lg-3\"><button class=\"btn btn-primary\" ng-click=addNewOptionBasicSelect()>{{\'ADD\' | translate}}</button></div></div></div></div><div class=row><div class=\"col-lg-3 col-md-3\"><label class=\"control-label greyText editPropertiesLabel\">{{\'EDIT_REMOVE_OPTIONS\' | translate}} :</label></div></div><div class=row><div class=form-group><div class-\"col-lg-12=\"\" col-md-12=\"\" col-sm-12=\"\" col-xs-12\"=\"\"><div class=container><div ng-if=\"basicSelectRowCollection.rows.length === 0\"><h5 class=\"text-center greyText\"><em>- {{\'NO_OPTION_ADD_NEW\' | translate}} -</em></h5></div><table ng-if=\"basicSelectRowCollection.rows.length > 0\" class=\"table table-striped\"><thead><tr><th st-ratio=20>{{\'ORDER\' | translate}}</th><th st-ratio=55>{{\'OPTION\' | translate}}</th><th st-ratio=25></th></tr><tr><th st-ratio=20></th><th st-ratio=55><input ng-model=basicSelectFilter placeholder=\"{{\'SEARCH_4_OPTION\' | translate}}\" class=\"input-sm form-control\" type=search></th><th st-ratio=25></th></tr></thead><tbody><tr ng-repeat=\"basicSelectRow in basicSelectRowCollection.rows | filter:basicSelectFilter as basicSelectRow\"><td st-ratio=20>{{$index}}</td><td st-ratio=55>{{basicSelectRow.option}}</td><td st-ratio=25><div class=pull-right><button class=\"btn btn-primary\" ng-click=upThisRow($index)><i class=\"fa fa-arrow-up\"></i></button> <button class=\"btn btn-primary\" ng-click=downThisRow($index)><i class=\"fa fa-arrow-down\"></i></button> <button class=\"btn btn-danger\" ng-click=removeRow($index)><i class=\"fa fa-trash-o\"></i></button></div></td></tr></tbody></table></div></div></div></div><hr><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextDescriptionUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'DESCRIPTION\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyDesciption id=inputTextDescriptionUpdate placeholder=\"{{\'ADDEDIT_DESCRIPTION\' | translate}}\"></div></div></div></div></div></div><div ng-switch-when=GroupedSelect><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-eye\"></i>&nbsp; {{\'PREVIEW_TAB\' | translate}} :</h5></div></div><hr><div class=row><div class=col-md-12><div class=form-group><label for=select class=\"control-label textControlLabel\">{{nyaSelect.temporyConfig.formlyLabel}}<span ng-if=nyaSelect.temporyConfig.formlyRequired class=textControlLabel>*</span></label><div><ol class=\"nya-bs-select col-sm-12 col-xs-12 col-md-12 col-lg12\" ng-model=modelGroupedSelect data-live-search=true disabled=\"groupedSelectRowCollection.rows.length === 0\"><li nya-bs-option=\"groupedSelectRow in groupedSelectRowCollection.rows group by groupedSelectRow.group\" value=$index><span class=dropdown-header>{{groupedSelectRow.group}}</span> <a><span>{{groupedSelectRow.option}}</span> <span class=\"glyphicon glyphicon-ok check-mark\"></span></a></li></ol><p class=help-block>{{nyaSelect.temporyConfig.formlyDesciption}}</p></div></div></div></div></div></div><div class=\"panel panel-default\"><div class=panel-body><div class=row><div class=col-md-12><h5 class=greyText><i class=\"fa fa-pencil-square-o\"></i>&nbsp; {{\'EDIT_PROPERTIES\' | translate}} :</h5></div></div><hr><div class=row><div class=\"col-lg-3 col-md-3\"><label for=groupedSelectRowCollection class=\"control-label greyText editPropertiesLabel\">{{\'ADD_NEW_OPTIONS\' | translate}} :</label></div></div><div class=row><div><div class=form-group><div class=\"col-sm-9 col-xs-9 col-md-9 col-lg-9\"><input type=text class=form-control id=inputAddNewGroupedOption placeholder=\"{{\'ADD_A_NEW_OPTION\' | translate}}\" ng-model=newOptionGroupedSelect.saisie></div><div class=\"col-sm-3 col-xs-3 col-md-3 col-lg-3\"><button class=\"btn btn-primary\" ng-click=addNewOptionGroupedSelect()>{{\'ADD\' | translate}}</button></div></div></div></div><div class=row><div class=\"col-lg-3 col-md-3\"><label for=groupedSelectRowCollection class=\"control-label greyText editPropertiesLabel\">{{\'ADD_NEW_GROUPS\' | translate}} :</label></div></div><div class=row><div><div class=form-group><div class=\"col-sm-9 col-xs-9 col-md-9 col-lg-9\"><input id=inputAddNewGroupGroupedOption type=text class=form-control ng-model=newGroupGroupedSelect.saisie placeholder=\"{{\'ADD_A_NEW_GROUP\' | translate}}\"></div><div class=\"col-sm-3 col-xs-3 col-md-3 col-lg-3\"><button class=\"btn btn-primary\" ng-click=addNewGroupToGroupedSelect()>{{\'ADD\' | translate}}</button></div></div></div></div><div class=row><div class=\"col-lg-3 col-md-3\"><label class=\"control-label greyText editPropertiesLabel\">{{\'EDIT_GROUPS_OPTIONS\' | translate}} :</label></div></div><div class=row><div class=form-group><div class-\"col-lg-12=\"\" col-md-12=\"\" col-sm-12=\"\" col-xs-12\"=\"\"><div class=container><div ng-if=\"groupedSelectRowCollection.rows.length === 0\"><h5 class=\"text-center greyText\"><em>- {{\'NO_OPTION_ADD_NEW\' | translate}} -</em></h5></div><table ng-if=\"groupedSelectRowCollection.rows.length > 0\" class=\"table table-striped\"><thead><tr><th st-ratio=20>{{\'ORDER\' | translate}}</th><th st-ratio=25>{{\'GROUP\' | translate}}</th><th st-ratio=30>{{\'OPTION\' | translate}}</th><th st-ratio=25></th></tr><tr><th st-ratio=20></th><th st-ratio=25></th><th st-ratio=30><input ng-model=groupedSelectFilter placeholder=\"{{\'SEARCH_4_OPTION\' | translate}}\" class=\"input-sm form-control\" type=search></th><th st-ratio=25></th></tr></thead><tbody><tr ng-repeat=\"groupedSelectRow in groupedSelectRowCollection.rows | filter:groupedSelectFilter as oneGroupedSelectRow\"><td st-ratio=20>{{$index}}</td><td st-ratio=25><div ng-if=\"groupSelectGroupClick.showList === true\"><div ng-if=\"GroupedSelectGroups.list.length === 0\"><p class=\"text-left noGroupText\">- {{\'NO_GROUP_ADD_NEW\' | translate}} -</p></div><div ng-if=\"GroupedSelectGroups.list.length > 0\"><ol class=\"nya-bs-select col-sm-12 col-xs-12 col-md-12 col-lg12 editGroupedSelectnyaSelect\" ng-model=oneGroupedSelectRow.group id=modelGroupedOptionGroupedChoose disabled=\"GroupedSelectGroups.list.length === 0\"><li class=nya-bs-option nya-bs-option=\"GroupedSelectGroup in GroupedSelectGroups.list\" value=GroupedSelectGroup><a>{{GroupedSelectGroup}}</a></li></ol></div></div><div ng-if=\"groupSelectGroupClick.showList === false\">{{oneGroupedSelectRow.group}}</div></td><td st-ratio=30>{{oneGroupedSelectRow.option}}</td><td st-ratio=25><div class=pull-right><button class=\"btn btn-primary\" ng-click=upThisGroupedSelectRow($index)><i class=\"fa fa-arrow-up\"></i></button> <button class=\"btn btn-primary\" ng-click=downThisGroupedSelectRow($index)><i class=\"fa fa-arrow-down\"></i></button> <button class=\"btn btn-warning\" ng-click=showGroupListToChoose()><i class=\"fa fa-pencil-square-o\"></i></button> <button class=\"btn btn-danger\" ng-click=removeGroupedSelectRow($index)><i class=\"fa fa-trash-o\"></i></button></div></td></tr></tbody></table></div></div></div></div><hr><div class=marginTopFivepixels></div><div class=row><div class=form-group><label for=inputTextDescriptionUpdate class=\"col-lg-3 control-label greyText editPropertiesLabel\">{{\'DESCRIPTION\' | translate}} :</label><div class=col-lg-9><input type=text class=form-control ng-model=nyaSelect.temporyConfig.formlyDesciption id=inputTextDescriptionUpdate placeholder=\"{{\'ADDEDIT_DESCRIPTION\' | translate}}\"></div></div></div></div></div></div></div></div><div class=modal-footer><button class=\"btn btn-primary\" ng-class=\"{\'disabled\': nyaSelect.selectedControl === \'none\'}\" ng-click=ok()>{{\'OK\' | translate}}</button> <button class=\"btn btn-warning\" ng-click=cancel()>{{\'CANCEL\' | translate}}</button></div>");}]);
 /**
  *  ------------------------------------------------------
  *  module core : injects core "non app modules"
@@ -822,7 +898,7 @@ $translateProvider.translations("tr", {
  *  module core : injects core "non app modules"
  *  ------------------------------------------------------
  *
- * 
+ *
  * ——————————————————————————————————————————————
  * MIT (2015) - Erwan Datin (MacKentoch)
  * https://github.com/MacKentoch/easyFormGenerator
@@ -831,13 +907,13 @@ $translateProvider.translations("tr", {
 
 (function(){
 	'use strict';
-	
+
 	angular
 		.module('eda.easyFormSteWayConfigProvider', [])
 		.provider('easyFormSteWayConfig', easyFormSteWayConfigFct);
-		
+
 		easyFormSteWayConfigFct.$inject = ['$translateProvider'];
-		
+
 		function easyFormSteWayConfigFct($translateProvider){
 			var _configuration 					= defaultConfig();
 			var _controlsList						= controlsList();
@@ -857,10 +933,10 @@ $translateProvider.translations("tr", {
 			this.getCurrentLanguage			= getCurrentLanguage;
 			this.showPreviewPanel				= showPreviewPanel;
 			this.showPreviewModels			= showPreviewModels;
-    	
-		
-			
-		
+
+
+
+
 			//set default config
 			function defaultConfig(){
 				var _defaultConfiguration = {
@@ -868,23 +944,24 @@ $translateProvider.translations("tr", {
 				};
 				return _defaultConfiguration;
 			}
-			
+
 			//show preview panel by default
 			function getDefaultshowPreviewPanel(){
 			 	return true;
 			}
-			
+
 			//show preview data, fields models in preview panel
 			function getDefaultShowPreviewModel(){
 				return true;
 			}
-		
+
 			function controlsList(){
 				var controls = [
 					{name: 'empty', 					enabled: true},
 					{name: 'Header', 					enabled: true},
 					{name: 'Subtitle', 				enabled: true},
 					{name: 'TextInput', 			enabled: true},
+					{name: 'FileUpload',			enabled: true},
 					{name: 'Password', 				enabled: true},
 					{name: 'Date', 						enabled: true},
 					{name: 'Texarea',	 				enabled: true},
@@ -894,88 +971,88 @@ $translateProvider.translations("tr", {
 					{name: 'BasicSelect', 		enabled: true},
 					{name: 'GroupedSelect', 	enabled: true}
 				];
-					
+
 				return controls;
 			}
-			
+
 			function setModalAnimation(flagConfig){
-				var valueToApply = (flagConfig === true) ? 
-														  flagConfig  
-														: (flagConfig === false ? 
-															  flagConfig 
+				var valueToApply = (flagConfig === true) ?
+														  flagConfig
+														: (flagConfig === false ?
+															  flagConfig
 															: _configuration.modalAnimated);
-																	
+
 				_configuration.modalAnimated = valueToApply;
 			}
 
-			function getModalAnimation(){																	
+			function getModalAnimation(){
 				return _configuration.modalAnimated;
-			}		
-			
-			
+			}
+
+
 			function getEnabledControls(){
 				return _controlsList;
 			}
-			
-			
-			
+
+
+
 			function disableControl(controlName){
 				if (angular.isString(controlName)) {
 					angular.forEach(_controlsList, function(aControl){
-						
+
 						if (aControl.name === controlName) {
 							aControl.enabled = false;
 						}
-						
-					});						
+
+					});
 				}
 			}
-			
+
 			function showPreviewPanel(wantToShow){
 				if (angular.isDefined(wantToShow)) {
 					if(wantToShow === true) 	_showPreviewPanel 	= true;
 					if(wantToShow === false) 	_showPreviewPanel 	= false;
 				}
 			}
-			
+
 			function showPreviewModels(wantToShow){
 				if (angular.isDefined(wantToShow)) {
 					if(wantToShow === true) 	_showPreviewModels 	= true;
 					if(wantToShow === false) 	_showPreviewModels 	= false;
-				}				
+				}
 			}
-			
+
 			function enableControl(controlName){
 				if (angular.isString(controlName)) {
 					angular.forEach(_controlsList, function(aControl){
 						if (aControl.name === controlName) {
 							aControl.enabled = true;
 						}
-					});						
-				}				
+					});
+				}
 			}
-			
-		
+
+
 			function getDefaultLanguage(){
 				var lang = 'en';
 				return lang;
 			}
-			
+
 			function initDefaultLanguage(){
   			$translateProvider.useSanitizeValueStrategy('escape'); 	//security : Enable escaping of HTML
 				$translateProvider.fallbackLanguage(_defaultLanguage);	//fallback language to default language
 				$translateProvider.preferredLanguage(_defaultLanguage);
 				return _defaultLanguage;
-			}			
-			
-			
+			}
+
+
 			function setDefaultLanguage(){
 				_currentLanguage = _defaultLanguage;
 				$translateProvider.preferredLanguage(_currentLanguage);
 				return _currentLanguage;
 			}
-			
-			function setLanguage(language){				
+
+			function setLanguage(language){
 				if (angular.isString(language)) {
 					_currentLanguage = language;
 					$translateProvider.preferredLanguage(language);
@@ -983,16 +1060,16 @@ $translateProvider.translations("tr", {
 					setDefaultLanguage();
 				}
 			}
-			
+
 			function getCurrentLanguage(){
 				 return _currentLanguage;
 			}
-				
-		
+
+
 			//$get implementation :
 			easyFormSteWayConfig.$inject = ['$translate'];
 			function easyFormSteWayConfig($translate){
-													
+
 				var service = {
 					setModalAnimation 			: setModalAnimationFct,
 					getModalAnimationValue 	: getModalAnimationValue,
@@ -1001,32 +1078,32 @@ $translateProvider.translations("tr", {
 					getCurrentLanguage			: getCurrentLanguage,
 					isPreviewPanelVisible		: isPreviewPanelVisible,
 					arePreviewModelsVisible	: arePreviewModelsVisible
- 					
+
 				};
 				return service;
-				
-				
+
+
 				function getModalAnimationValue(){
 					return _configuration.modalAnimated;
-				}				
-				
+				}
+
 				function setModalAnimationFct(value){
 					setModalAnimation(value);
 				}
-				
+
 				function getListEnabledControl(){
 					return angular.copy(_controlsList);
 				}
-				
+
 				function isPreviewPanelVisible(){
 					return _showPreviewPanel;
 				}
-				
+
 				function arePreviewModelsVisible(){
 					return _showPreviewModels;
-				}	
-				
-										
+				}
+
+
 				function switchLanguage(language){
 					if (angular.isString(language)) {
 						_currentLanguage = language;
@@ -1034,17 +1111,18 @@ $translateProvider.translations("tr", {
 					}else{
 						setDefaultLanguage();
 					}
-				}				
-				
+				}
 
-				
+
+
 			}
-		
+
 		}
-		
-		
-		
+
+
+
 })();
+
 /**
  *  ------------------------------------------------------
  *  controllers container
@@ -2814,7 +2892,7 @@ $translateProvider.translations("tr", {
  *  ------------------------------------------------------
  *
  *  service dedicated to - edit control - (controller modal proxy)
- * 
+ *
  * ——————————————————————————————————————————————
  * MIT (2015) - Erwan Datin (MacKentoch)
  * https://github.com/MacKentoch/easyFormGenerator
@@ -2830,7 +2908,7 @@ $translateProvider.translations("tr", {
 
 		controllerModalProxy.$inject = ['easyFormSteWayConfig'];
 		function controllerModalProxy(easyFormSteWayConfig){
-			
+
 			var service = {
 				initNyaSelect 													: initNyaSelect,
 				getNyASelectFromSelectedLineColumn 			: getNyASelectFromSelectedLineColumn,
@@ -2843,7 +2921,7 @@ $translateProvider.translations("tr", {
 				refreshControlFormlyValidation					: refreshControlFormlyValidation,
 				getFilteredNyaSelectObject							: getFilteredNyaSelectObject
 			};
-			
+
 			return service;
 
 
@@ -2853,25 +2931,25 @@ $translateProvider.translations("tr", {
 
 			/**
 			 * get all controls definition (nyaSelectObj)
-			 * 
+			 *
 			 * needed to bind these properties :
-			 * 
-			 * formlyExpressionProperties: {}, 
+			 *
+			 * formlyExpressionProperties: {},
 			 * formlyValidators: {},
-			 * formlyValidation                       		
+			 * formlyValidation
 			 */
 			function getControlsDefinition(){
 				var controls = {};
-				resetNyaSelect(controls);	
+				resetNyaSelect(controls);
 				return controls;
 			}
-			
+
 			/**
 			 * loading forms will not be able to retrieve formlyExpressionProperties
 			 * -> here does the job
 			 */
 			function refreshControlFormlyExpressionProperties(configurationModel){
-				
+
 				if (angular.isObject(configurationModel)) {
 					//iterates lines
 					angular.forEach(configurationModel.lines, function(line, indexLine){
@@ -2880,21 +2958,21 @@ $translateProvider.translations("tr", {
 							angular.forEach(_controlsDefinition.controls, function(aControl, aControlIndex){
 								if (column.control.type === aControl.formlyType &&
 										column.control.subtype === aControl.formlySubtype) {
-										//----> update control formlyExpressionProperties property											
-										column.control.formlyExpressionProperties = aControl.formlyExpressionProperties;										
+										//----> update control formlyExpressionProperties property
+										column.control.formlyExpressionProperties = aControl.formlyExpressionProperties;
 								}
-							});		
+							});
 						});
 					});
 				}
-				
+
 			}
 			/**
 			 * loading forms will not be able to retrieve formlyValidators
 			 * -> here does the job
-			 */			
+			 */
 			function refreshControlFormlyValidators(configurationModel){
-				
+
 				if (angular.isObject(configurationModel)) {
 					//iterates lines
 					angular.forEach(configurationModel.lines, function(line, indexLine){
@@ -2903,21 +2981,21 @@ $translateProvider.translations("tr", {
 							angular.forEach(_controlsDefinition.controls, function(aControl, aControlIndex){
 								if (column.control.type === aControl.formlyType &&
 										column.control.subtype === aControl.formlySubtype) {
-										//----> update control formlyValidators property											
+										//----> update control formlyValidators property
 										column.control.formlyValidators = aControl.formlyValidators;
 								}
-							});		
+							});
 						});
 					});
-				}				
-				
+				}
+
 			}
 			/**
 			 * loading forms will not be able to retrieve formlyValidation
 			 * -> here does the job
-			 */			
+			 */
 			function refreshControlFormlyValidation(configurationModel){
-			
+
 				if (angular.isObject(configurationModel)) {
 					//iterates lines
 					angular.forEach(configurationModel.lines, function(line, indexLine){
@@ -2926,23 +3004,23 @@ $translateProvider.translations("tr", {
 							angular.forEach(_controlsDefinition.controls, function(aControl, aControlIndex){
 								if (column.control.type === aControl.formlyType &&
 										column.control.subtype === aControl.formlySubtype) {
-										//----> update control formlyValidation property											
+										//----> update control formlyValidation property
 										column.control.formlyValidation = aControl.formlyValidation;
 								}
-							});		
+							});
 						});
 					});
-				}					
-				
+				}
+
 			}
 
-			
+
 	    function getNyASelectFromSelectedLineColumn(nyaSelectObj, configurationObj, indexLine, numcolumn){
 	      resetNyaSelect(nyaSelectObj);
 	      /**
-	       * data send to modal controller                                           
+	       * data send to modal controller
 	       */
-	      
+
 	      if (typeof configurationObj.lines[indexLine].columns[numcolumn].control.templateOptions != 'undefined') {
 
 	        nyaSelectObj.temporyConfig.selectedControl 		= typeof configurationObj.lines[indexLine].columns[numcolumn].control.selectedControl 						!= 'undefined' ? configurationObj.lines[indexLine].columns[numcolumn].control.selectedControl : 'none';
@@ -2951,23 +3029,23 @@ $translateProvider.translations("tr", {
 	        nyaSelectObj.temporyConfig.formlyDesciption 	= typeof configurationObj.lines[indexLine].columns[numcolumn].control.templateOptions.description != 'undefined' ? configurationObj.lines[indexLine].columns[numcolumn].control.templateOptions.description : '';
 	        nyaSelectObj.temporyConfig.formlyPlaceholder 	= typeof configurationObj.lines[indexLine].columns[numcolumn].control.templateOptions.placeholder != 'undefined' ? configurationObj.lines[indexLine].columns[numcolumn].control.templateOptions.placeholder : '';
 	        nyaSelectObj.temporyConfig.formlyOptions 			= typeof configurationObj.lines[indexLine].columns[numcolumn].control.templateOptions.options 		!= 'undefined' ? configurationObj.lines[indexLine].columns[numcolumn].control.templateOptions.options : '';
-					
+
 					nyaSelectObj.temporyConfig.formlyExpressionProperties = typeof configurationObj.lines[indexLine].columns[numcolumn].control.formlyExpressionProperties 	!= 'undefined' ? angular.copy(configurationObj.lines[indexLine].columns[numcolumn].control.formlyExpressionProperties) : {};
 					nyaSelectObj.temporyConfig.formlyValidators 	= typeof configurationObj.lines[indexLine].columns[numcolumn].control.formlyValidators 										!= 'undefined' ? angular.copy(configurationObj.lines[indexLine].columns[numcolumn].control.formlyValidators) : {};
 					nyaSelectObj.temporyConfig.formlyValidation 	= typeof configurationObj.lines[indexLine].columns[numcolumn].control.formlyValidation 										!= 'undefined' ? angular.copy(configurationObj.lines[indexLine].columns[numcolumn].control.formlyValidation) : {};
-					
+
 					/**
-					 * particular case : datepicker 
+					 * particular case : datepicker
 					 */
 	        if (nyaSelectObj.temporyConfig.selectedControl === 'Date') {
 	        	nyaSelectObj.temporyConfig.datepickerPopup 	= typeof configurationObj.lines[indexLine].columns[numcolumn].control.templateOptions.datepickerPopup != 'undefined' ? configurationObj.lines[indexLine].columns[numcolumn].control.templateOptions.datepickerPopup : '';
 	        }
 	      }
-	      return nyaSelectObj;	    	
+	      return nyaSelectObj;
 	    }
 
 	    function bindConfigurationModelFromModalReturn(indexLine, numcolumn, modalAddCtrlModel, configurationObj){
-					      
+
 	      var extractedProps = returnControlFromAddCtrlModalModel(modalAddCtrlModel);
 	      configurationObj.lines[indexLine].columns[numcolumn].control.selectedControl 		= extractedProps.selectedControl;
 	      configurationObj.lines[indexLine].columns[numcolumn].control.type 							= extractedProps.formlyType;
@@ -2980,7 +3058,7 @@ $translateProvider.translations("tr", {
 	                                                                                            placeholder: '',
 	                                                                                            options: []
 	                                                                                          };
-	       //then bind templateOptions                                                                                   
+	       //then bind templateOptions
 	      configurationObj.lines[indexLine].columns[numcolumn].control.templateOptions.label 			 = extractedProps.formlyLabel;
 	      configurationObj.lines[indexLine].columns[numcolumn].control.templateOptions.required 	 = extractedProps.formlyRequired;
 	      configurationObj.lines[indexLine].columns[numcolumn].control.templateOptions.description = extractedProps.formlyDesciption;
@@ -2997,9 +3075,9 @@ $translateProvider.translations("tr", {
 	      //-> datepicker : datepickerPopup
 	      if (configurationObj.lines[indexLine].columns[numcolumn].control.type === 'datepicker') {
 	       	configurationObj.lines[indexLine].columns[numcolumn].control.templateOptions.datepickerPopup = extractedProps.datepickerPopup;
-	      }	
+	      }
 	      /**
-	       * unique key (set only first time) in this model is formly control type + Date.now();  
+	       * unique key (set only first time) in this model is formly control type + Date.now();
 	       */
 	      var newKey = configurationObj.lines[indexLine].columns[numcolumn].control.type + '-' + Date.now();
 
@@ -3007,7 +3085,7 @@ $translateProvider.translations("tr", {
 	        configurationObj.lines[indexLine].columns[numcolumn].control.key = newKey;
 	      }else{
 	      	/**
-	      	 * 2nd attempt 
+	      	 * 2nd attempt
 	      	 */
 	        newKey = configurationObj.lines[indexLine].columns[numcolumn].control.type + '-' + Date.now();
 
@@ -3015,17 +3093,17 @@ $translateProvider.translations("tr", {
 	          configurationObj.lines[indexLine].columns[numcolumn].control.key = newKey;
 	        }else{
 	        	/**
-	        	 * 2nd attempt 
+	        	 * 2nd attempt
 	        	 */
 	          newKey = configurationObj.lines[indexLine].columns[numcolumn].control.type + '-' + Date.now();
 	        }
-	      }                                                                     
+	      }
 	    	configurationObj.lines[indexLine].columns[numcolumn].control.edited = true;
 	  	}
 
 	  	function applyConfigToSelectedControl(nyaSelectObj){
 		  	/**
-		  	 * used in modal (edit control) 
+		  	 * used in modal (edit control)
 		  	 */
 		    for (var i = nyaSelectObj.controls.length - 1; i >= 0; i--) {
 		      if (nyaSelectObj.controls[i].id === nyaSelectObj.selectedControl) {
@@ -3039,19 +3117,19 @@ $translateProvider.translations("tr", {
 		          if (nyaSelectObj.controls[i].id ==='Date' ) {
 		          	nyaSelectObj.controls[i].datepickerPopup 					= nyaSelectObj.temporyConfig.datepickerPopup;
 		          }
-		        
+
 		       }
 		    }
 		  }
 
 		  function resetTemporyConfig(){
 		    return {
-	              formlyLabel: '', 
-	              formlyRequired: false, 
+	              formlyLabel: '',
+	              formlyRequired: false,
 	              formlyPlaceholder: '',
 	              formlyDesciption: '',
 	              formlyOptions: []
-	            }; 		  	
+	            };
 		  }
 
 	    /**
@@ -3062,41 +3140,41 @@ $translateProvider.translations("tr", {
 
 		                    controls : [
 		                                {
-		                                	id: 'empty',  
-		                                	name: 'no control', 
-		                                	subtitle: 'no control', 
-		                                	group: 'Blank', 
-		                                	formlyType: 'blank', 
-		                                	formlySubtype: '', 
-		                                	formlyLabel: '', 
-		                                	formlyRequired: false, 
-		                                	formlyDesciption: '', 
-		                                	formlyOptions: [] , 
-		                                	formlyExpressionProperties: {}, 
-		                                	formlyValidators: {}, 
-		                                	formlyValidation: {} 
+		                                	id: 'empty',
+		                                	name: 'no control',
+		                                	subtitle: 'no control',
+		                                	group: 'Blank',
+		                                	formlyType: 'blank',
+		                                	formlySubtype: '',
+		                                	formlyLabel: '',
+		                                	formlyRequired: false,
+		                                	formlyDesciption: '',
+		                                	formlyOptions: [] ,
+		                                	formlyExpressionProperties: {},
+		                                	formlyValidators: {},
+		                                	formlyValidation: {}
 		                                },
 
 		                                {id: 'Header',  name: 'Header', subtitle: 'no control', group: 'Decoration', formlyType: 'header', formlySubtype: '', formlyLabel: '', formlyRequired: false, formlyDesciption: '', formlyOptions: [] , formlyExpressionProperties: {}, formlyValidators: {}, formlyValidation: {}},
 		                                {id: 'Subtitle',  name: 'Subtitle', subtitle: 'no control', group: 'Decoration', formlyType: 'subTitle', formlySubtype: '', formlyLabel: '', formlyRequired: false, formlyDesciption: '', formlyOptions: [] , formlyExpressionProperties: {}, formlyValidators: {}, formlyValidation: {}},
 
 		                                {
-		                                	id: 'TextInput',  
-		                                	name: 'Text input', 
-		                                	subtitle: 'Text input', 
-		                                	group: 'input', 
-		                                	formlyType: 'input', 
-		                                	formlySubtype: '', 
-		                                	formlyLabel: '', 
-		                                	formlyRequired: false, 
-		                                	formlyDesciption: '', 
-		                                	formlyOptions: [] , 
-		                                	formlyExpressionProperties: {}, 
-		                                	formlyValidators: {}, 
+		                                	id: 'TextInput',
+		                                	name: 'Text input',
+		                                	subtitle: 'Text input',
+		                                	group: 'input',
+		                                	formlyType: 'input',
+		                                	formlySubtype: '',
+		                                	formlyLabel: '',
+		                                	formlyRequired: false,
+		                                	formlyDesciption: '',
+		                                	formlyOptions: [] ,
+		                                	formlyExpressionProperties: {},
+		                                	formlyValidators: {},
 		                                	formlyValidation: {
 						                                		          messages: {
 																													            required: function(viewValue, modelValue, scope) {
-																													              		//return a required validation message : 
+																													              		//return a required validation message :
 																													              		//-> '<label as name> is required '
 																													              		//-> or if not exists or empty just 'this field is required'
 																													              		var defaultReturnMsg = 'this Text input field is required';
@@ -3107,23 +3185,50 @@ $translateProvider.translations("tr", {
 		                                										}
 		                                },
 
+																		{
+																			id: 'FileUpload',
+																			name: 'File upload',
+																			subtitle: 'File upload',
+																			group: 'input',
+																			formlyType: 'fileupload',
+																			formlySubtype: '',
+																			formlyLabel: '',
+																			formlyRequired: false,
+																			formlyDesciption: '',
+																			formlyOptions: [] ,
+																			formlyExpressionProperties: {},
+																			formlyValidators: {},
+																			formlyValidation: {
+																													messages: {
+																																			required: function(viewValue, modelValue, scope) {
+																																						//return a required validation message :
+																																						//-> '<label as name> is required '
+																																						//-> or if not exists or empty just 'this field is required'
+																																						var defaultReturnMsg = 'this File upload field is required';
+																																						var returnMsg = (typeof scope.to.label !== 'undefined') ? ((scope.to.label !== '') ? scope.to.label + ' is required' : defaultReturnMsg) : defaultReturnMsg;
+																																						return returnMsg;
+																																					}
+																																		}
+																												}
+																		},
+
 		                                {
-		                                	id: 'Password',  
-		                               	 	name: 'Password', 
-		                                	subtitle: 'Password', 
-		                                	group: 'input', 
-		                                	formlyType: 'input', 
-		                                	formlySubtype: 'password', 
-		                                	formlyLabel: '', 
-		                                	formlyRequired: false, 
-		                                	formlyDesciption: '', 
-		                                	formlyOptions: [] , 
-		                                	formlyExpressionProperties: {}, 
-		                                	formlyValidators: {}, 
+		                                	id: 'Password',
+		                               	 	name: 'Password',
+		                                	subtitle: 'Password',
+		                                	group: 'input',
+		                                	formlyType: 'input',
+		                                	formlySubtype: 'password',
+		                                	formlyLabel: '',
+		                                	formlyRequired: false,
+		                                	formlyDesciption: '',
+		                                	formlyOptions: [] ,
+		                                	formlyExpressionProperties: {},
+		                                	formlyValidators: {},
 	                                		formlyValidation: {
 					                                		          messages: {
 																												            required: function(viewValue, modelValue, scope) {
-																												              		//return a required validation message : 
+																												              		//return a required validation message :
 																												              		//-> '<label as name> is required '
 																												              		//-> or if not exists or empty just 'this field is required'
 																												              		var defaultReturnMsg = 'this Password field is required';
@@ -3133,19 +3238,19 @@ $translateProvider.translations("tr", {
 					                                												}
 	                                										}
 		                              },
-		                                
+
 		                                {
-		                                	id 													: 'Email',  
-		                                	name 												: 'Email', 
-		                                	subtitle 										: 'Email', 
-		                                	group 											: 'input', 
-		                                	formlyType									: 'input', 
-		                                	formlySubtype 							: 'email', 
-		                                	formlyLabel 								: '', 
-		                                	formlyRequired 							: false, 
-		                                	formlyDesciption 						: '', 
-		                                	formlyOptions 							: [], 
-		                                	formlyExpressionProperties 	: {}, 
+		                                	id 													: 'Email',
+		                                	name 												: 'Email',
+		                                	subtitle 										: 'Email',
+		                                	group 											: 'input',
+		                                	formlyType									: 'input',
+		                                	formlySubtype 							: 'email',
+		                                	formlyLabel 								: '',
+		                                	formlyRequired 							: false,
+		                                	formlyDesciption 						: '',
+		                                	formlyOptions 							: [],
+		                                	formlyExpressionProperties 	: {},
 
 		                                	formlyValidators 						: {
 																	                                		emailShape : {
@@ -3160,38 +3265,38 @@ $translateProvider.translations("tr", {
 		                                	formlyValidation: {
 						                                		          messages: {
 																													            required: function(viewValue, modelValue, scope) {
-																													              		//return a required validation message : 
+																													              		//return a required validation message :
 																													              		//-> '<label as name> is required '
 																													              		//-> or if not exists or empty just 'this field is required'
-																													              		
+
 																													              		var defaultReturnMsg = 'this Email field is required';
 																													              		var returnMsg = (typeof scope.to.label !== 'undefined') ? ((scope.to.label !== '') ? scope.to.label + ' is required' : defaultReturnMsg) : defaultReturnMsg;
-																													              		//check if validation is really dued to require validation 
+																													              		//check if validation is really dued to require validation
 																													              		//and not another validation like emailShape validator
 																													              		if (scope.to.required) return returnMsg;
 																													            		}
 						                                												}
 		                                										}
 		                                },
-		                                
+
 		                                {
-		                                	id: 'Date',  
-		                                	name: 'Date', 
-		                                	subtitle: 'Date', 
-		                                	group: 'input', 
-		                                	formlyType: 'datepicker', 
-		                                	formlySubtype: '', 
-		                                	formlyLabel: '', 
-		                                	formlyRequired: false, 
-		                                	formlyDesciption: '', 
-		                                	formlyOptions: [], 
-		                                	datepickerPopup: 'dd-MMMM-yyyy', 
-		                                	formlyExpressionProperties: {}, 
-		                                	formlyValidators: {}, 
+		                                	id: 'Date',
+		                                	name: 'Date',
+		                                	subtitle: 'Date',
+		                                	group: 'input',
+		                                	formlyType: 'datepicker',
+		                                	formlySubtype: '',
+		                                	formlyLabel: '',
+		                                	formlyRequired: false,
+		                                	formlyDesciption: '',
+		                                	formlyOptions: [],
+		                                	datepickerPopup: 'dd-MMMM-yyyy',
+		                                	formlyExpressionProperties: {},
+		                                	formlyValidators: {},
 		                                	formlyValidation: {
 						                                		          messages: {
 																													            required: function(viewValue, modelValue, scope) {
-																													              		//return a required validation message : 
+																													              		//return a required validation message :
 																													              		//-> '<label as name> is required '
 																													              		//-> or if not exists or empty just 'this field is required'
 																													              		var defaultReturnMsg = 'this Date field is required';
@@ -3203,22 +3308,22 @@ $translateProvider.translations("tr", {
 		                                },
 
 		                                {
-		                                	id: 'Texarea', 
-		                                	name: 'Textarea', 
-		                                	subtitle: 'Textarea', 
-		                                	group: 'Textarea', 
-		                                	formlyType: 'textarea', 
-		                                	formlySubtype: '', 
-		                                	formlyLabel: '', 
-		                                	formlyRequired: false, 
-		                                	formlyDesciption: '', 
-		                                	formlyOptions: [], 
-		                                	formlyExpressionProperties: {}, 
-		                                	formlyValidators: {}, 
+		                                	id: 'Texarea',
+		                                	name: 'Textarea',
+		                                	subtitle: 'Textarea',
+		                                	group: 'Textarea',
+		                                	formlyType: 'textarea',
+		                                	formlySubtype: '',
+		                                	formlyLabel: '',
+		                                	formlyRequired: false,
+		                                	formlyDesciption: '',
+		                                	formlyOptions: [],
+		                                	formlyExpressionProperties: {},
+		                                	formlyValidators: {},
 		                                	formlyValidation: {
 						                                		          messages: {
 																													            required: function(viewValue, modelValue, scope) {
-																													              		//return a required validation message : 
+																													              		//return a required validation message :
 																													              		//-> '<label as name> is required '
 																													              		//-> or if not exists or empty just 'this field is required'
 																													              		var defaultReturnMsg = 'this Textarea field is required';
@@ -3230,24 +3335,24 @@ $translateProvider.translations("tr", {
 		                                },
 
 		                                {
-		                                	id: 'RichTextEditor', 
-		                                	name: 'RichTextEditor', 
-		                                	subtitle: 'RichTextEditor', 
-		                                	group: 'Textarea', 
-		                                	formlyType: 'richEditor', 
-		                                	formlySubtype: '', 
-		                                	formlyLabel: '', 
-		                                	formlyRequired: false, 
-		                                	formlyDesciption: '', 
-		                                	formlyOptions: [], 
-		                                	formlyExpressionProperties: {}, 
-		   
+		                                	id: 'RichTextEditor',
+		                                	name: 'RichTextEditor',
+		                                	subtitle: 'RichTextEditor',
+		                                	group: 'Textarea',
+		                                	formlyType: 'richEditor',
+		                                	formlySubtype: '',
+		                                	formlyLabel: '',
+		                                	formlyRequired: false,
+		                                	formlyDesciption: '',
+		                                	formlyOptions: [],
+		                                	formlyExpressionProperties: {},
+
 		                                	formlyValidators 						: {},
 
 		                                	formlyValidation: {
 						                                		          messages: {
 																													            required: function(viewValue, modelValue, scope) {
-																													              		//return a required validation message : 
+																													              		//return a required validation message :
 																													              		//-> '<label as name> is required '
 																													              		//-> or if not exists or empty just 'this field is required'
 																													              		var defaultReturnMsg = 'this RichTextEditor field is required';
@@ -3259,23 +3364,23 @@ $translateProvider.translations("tr", {
 		                                },
 
 		                                {
-		                                	id: 'Radio', 
-		                                	name: 'Radio', 
-		                                	subtitle: 'Radio', 
-		                                	options: [], 
-		                                	group: 'Radio', 
-		                                	formlyType: 'radio', 
-		                                	formlySubtype: '', 
-		                                	formlyLabel: '', 
-		                                	formlyRequired: false, 
-		                                	formlyDesciption: '' , 
-		                                	formlyOptions: [], 
-		                                	formlyExpressionProperties: {}, 
-		                                	formlyValidators: {}, 
+		                                	id: 'Radio',
+		                                	name: 'Radio',
+		                                	subtitle: 'Radio',
+		                                	options: [],
+		                                	group: 'Radio',
+		                                	formlyType: 'radio',
+		                                	formlySubtype: '',
+		                                	formlyLabel: '',
+		                                	formlyRequired: false,
+		                                	formlyDesciption: '' ,
+		                                	formlyOptions: [],
+		                                	formlyExpressionProperties: {},
+		                                	formlyValidators: {},
 	                                		formlyValidation: {
 					                                		          messages: {
 																												            required: function(viewValue, modelValue, scope) {
-																												              		//return a required validation message : 
+																												              		//return a required validation message :
 																												              		//-> '<label as name> is required '
 																												              		//-> or if not exists or empty just 'this field is required'
 																												              		var defaultReturnMsg = 'this Password field is required';
@@ -3287,22 +3392,22 @@ $translateProvider.translations("tr", {
 		                                },
 
 		                                {
-		                                	id: 'Checkbox', 
-		                                	name: 'Checkbox', 
-		                                	subtitle: 'Checkbox', 
-		                                	group: 'Checkbox', 
-		                                	formlyType: 'checkbox', 
-		                                	formlySubtype: '', 
-		                                	formlyLabel: '', 
-		                                	formlyRequired: false, 
-		                                	formlyDesciption: '', 
-		                                	formlyOptions: [], 
-		                                	formlyExpressionProperties: {}, 
-		                                	formlyValidators: {}, 
+		                                	id: 'Checkbox',
+		                                	name: 'Checkbox',
+		                                	subtitle: 'Checkbox',
+		                                	group: 'Checkbox',
+		                                	formlyType: 'checkbox',
+		                                	formlySubtype: '',
+		                                	formlyLabel: '',
+		                                	formlyRequired: false,
+		                                	formlyDesciption: '',
+		                                	formlyOptions: [],
+		                                	formlyExpressionProperties: {},
+		                                	formlyValidators: {},
 	                                		formlyValidation: {
 					                                		          messages: {
 																												            required: function(viewValue, modelValue, scope) {
-																												              		//return a required validation message : 
+																												              		//return a required validation message :
 																												              		//-> '<label as name> is required '
 																												              		//-> or if not exists or empty just 'this field is required'
 																												              		var defaultReturnMsg = 'this Checkbox field is required';
@@ -3314,23 +3419,23 @@ $translateProvider.translations("tr", {
 		                                },
 
 		                                {
-		                                	id: 'BasicSelect', 
-		                                	name: 'Basic select', 
+		                                	id: 'BasicSelect',
+		                                	name: 'Basic select',
 		                                	subtitle: 'Basic select',
-		                                	options: [], 
-		                                	group: 'Select', 
-		                                	formlyType: 'basicSelect', 
-		                                	formlySubtype: '', 
-		                                	formlyLabel: '', 
-		                                	formlyRequired: false, 
-		                                	formlyDesciption: '', 
-		                                	formlyOptions: [], 
-		                                	formlyExpressionProperties: {}, 
-		                                	formlyValidators: {}, 
+		                                	options: [],
+		                                	group: 'Select',
+		                                	formlyType: 'basicSelect',
+		                                	formlySubtype: '',
+		                                	formlyLabel: '',
+		                                	formlyRequired: false,
+		                                	formlyDesciption: '',
+		                                	formlyOptions: [],
+		                                	formlyExpressionProperties: {},
+		                                	formlyValidators: {},
 	                                		formlyValidation: {
 					                                		          messages: {
 																												            required: function(viewValue, modelValue, scope) {
-																												              		//return a required validation message : 
+																												              		//return a required validation message :
 																												              		//-> '<label as name> is required '
 																												              		//-> or if not exists or empty just 'this field is required'
 																												              		var defaultReturnMsg = 'this Basic select field is required';
@@ -3342,23 +3447,23 @@ $translateProvider.translations("tr", {
 		                                },
 
 		                                {
-		                                	id: 'GroupedSelect', 
-		                                	name: 'Grouped Select', 
+		                                	id: 'GroupedSelect',
+		                                	name: 'Grouped Select',
 		                                	subtitle: 'Grouped Select',
-		                                	options: [], 
-		                                	group: 'Select', 
-		                                	formlyType: 'groupedSelect', 
-		                                	formlySubtype: '', 
-		                                	formlyLabel: '', 
-		                                	formlyRequired: false, 
+		                                	options: [],
+		                                	group: 'Select',
+		                                	formlyType: 'groupedSelect',
+		                                	formlySubtype: '',
+		                                	formlyLabel: '',
+		                                	formlyRequired: false,
 		                                	formlyDesciption: '',
-		                                	formlyOptions: [], 
-		                                	formlyExpressionProperties: {}, 
-		                                	formlyValidators: {}, 
+		                                	formlyOptions: [],
+		                                	formlyExpressionProperties: {},
+		                                	formlyValidators: {},
 	                                		formlyValidation: {
 					                                		          messages: {
 																												            required: function(viewValue, modelValue, scope) {
-																												              		//return a required validation message : 
+																												              		//return a required validation message :
 																												              		//-> '<label as name> is required '
 																												              		//-> or if not exists or empty just 'this field is required'
 																												              		var defaultReturnMsg = 'this Grouped Select field is required';
@@ -3373,22 +3478,22 @@ $translateProvider.translations("tr", {
 		                      selectedControl : 'none' ,
 		                      temporyConfig : {
 		                                        selectedControl: 'none',
-		                                        formlyLabel: 'label', 
-		                                        formlyRequired: false, 
+		                                        formlyLabel: 'label',
+		                                        formlyRequired: false,
 		                                        formlyDesciption: '',
 		                                        formlyPlaceholder: '',
 		                                        formlyOptions : [],
 																	          //expressions/validation fields
 																	          formlyExpressionProperties: {},
 																	          formlyValidators: {},
-																	          formlyValidation: {}                                        
-		                                      } 
+																	          formlyValidation: {}
+		                                      }
 
 		    };
 
 		    //reset
 		  	return angular.copy(filterDisabledControl(angular.copy(newNyaSelectObj)));
-				
+
 			}
 
 	    /**
@@ -3399,41 +3504,41 @@ $translateProvider.translations("tr", {
 
 		                    controls : [
 		                                {
-		                                	id: 'empty',  
-		                                	name: 'no control', 
-		                                	subtitle: 'no control', 
-		                                	group: 'Blank', 
-		                                	formlyType: 'blank', 
-		                                	formlySubtype: '', 
-		                                	formlyLabel: '', 
-		                                	formlyRequired: false, 
-		                                	formlyDesciption: '', 
-		                                	formlyOptions: [] , 
-		                                	formlyExpressionProperties: {}, 
-		                                	formlyValidators: {}, 
-		                                	formlyValidation: {} 
+		                                	id: 'empty',
+		                                	name: 'no control',
+		                                	subtitle: 'no control',
+		                                	group: 'Blank',
+		                                	formlyType: 'blank',
+		                                	formlySubtype: '',
+		                                	formlyLabel: '',
+		                                	formlyRequired: false,
+		                                	formlyDesciption: '',
+		                                	formlyOptions: [] ,
+		                                	formlyExpressionProperties: {},
+		                                	formlyValidators: {},
+		                                	formlyValidation: {}
 		                                },
 
 		                                {id: 'Header',  name: 'Header', subtitle: 'no control', group: 'Decoration', formlyType: 'header', formlySubtype: '', formlyLabel: '', formlyRequired: false, formlyDesciption: '', formlyOptions: [] , formlyExpressionProperties: {}, formlyValidators: {}, formlyValidation: {}},
 		                                {id: 'Subtitle',  name: 'Subtitle', subtitle: 'no control', group: 'Decoration', formlyType: 'subTitle', formlySubtype: '', formlyLabel: '', formlyRequired: false, formlyDesciption: '', formlyOptions: [] , formlyExpressionProperties: {}, formlyValidators: {}, formlyValidation: {}},
 
 		                                {
-		                                	id: 'TextInput',  
-		                                	name: 'Text input', 
-		                                	subtitle: 'Text input', 
-		                                	group: 'input', 
-		                                	formlyType: 'input', 
-		                                	formlySubtype: '', 
-		                                	formlyLabel: '', 
-		                                	formlyRequired: false, 
-		                                	formlyDesciption: '', 
-		                                	formlyOptions: [] , 
-		                                	formlyExpressionProperties: {}, 
-		                                	formlyValidators: {}, 
+		                                	id: 'TextInput',
+		                                	name: 'Text input',
+		                                	subtitle: 'Text input',
+		                                	group: 'input',
+		                                	formlyType: 'input',
+		                                	formlySubtype: '',
+		                                	formlyLabel: '',
+		                                	formlyRequired: false,
+		                                	formlyDesciption: '',
+		                                	formlyOptions: [] ,
+		                                	formlyExpressionProperties: {},
+		                                	formlyValidators: {},
 		                                	formlyValidation: {
 						                                		          messages: {
 																													            required: function(viewValue, modelValue, scope) {
-																													              		//return a required validation message : 
+																													              		//return a required validation message :
 																													              		//-> '<label as name> is required '
 																													              		//-> or if not exists or empty just 'this field is required'
 																													              		var defaultReturnMsg = 'this Text input field is required';
@@ -3444,23 +3549,50 @@ $translateProvider.translations("tr", {
 		                                										}
 		                                },
 
+																		{
+																			id: 'FileUpload',
+																			name: 'File upload',
+																			subtitle: 'File upload',
+																			group: 'input',
+																			formlyType: 'fileupload',
+																			formlySubtype: '',
+																			formlyLabel: '',
+																			formlyRequired: false,
+																			formlyDesciption: '',
+																			formlyOptions: [] ,
+																			formlyExpressionProperties: {},
+																			formlyValidators: {},
+																			formlyValidation: {
+																													messages: {
+																																			required: function(viewValue, modelValue, scope) {
+																																						//return a required validation message :
+																																						//-> '<label as name> is required '
+																																						//-> or if not exists or empty just 'this field is required'
+																																						var defaultReturnMsg = 'this File upload field is required';
+																																						var returnMsg = (typeof scope.to.label !== 'undefined') ? ((scope.to.label !== '') ? scope.to.label + ' is required' : defaultReturnMsg) : defaultReturnMsg;
+																																						return returnMsg;
+																																					}
+																																		}
+																												}
+																		},
+
 		                                {
-		                                	id: 'Password',  
-		                               	 	name: 'Password', 
-		                                	subtitle: 'Password', 
-		                                	group: 'input', 
-		                                	formlyType: 'input', 
-		                                	formlySubtype: 'password', 
-		                                	formlyLabel: '', 
-		                                	formlyRequired: false, 
-		                                	formlyDesciption: '', 
-		                                	formlyOptions: [] , 
-		                                	formlyExpressionProperties: {}, 
-		                                	formlyValidators: {}, 
+		                                	id: 'Password',
+		                               	 	name: 'Password',
+		                                	subtitle: 'Password',
+		                                	group: 'input',
+		                                	formlyType: 'input',
+		                                	formlySubtype: 'password',
+		                                	formlyLabel: '',
+		                                	formlyRequired: false,
+		                                	formlyDesciption: '',
+		                                	formlyOptions: [] ,
+		                                	formlyExpressionProperties: {},
+		                                	formlyValidators: {},
 	                                		formlyValidation: {
 					                                		          messages: {
 																												            required: function(viewValue, modelValue, scope) {
-																												              		//return a required validation message : 
+																												              		//return a required validation message :
 																												              		//-> '<label as name> is required '
 																												              		//-> or if not exists or empty just 'this field is required'
 																												              		var defaultReturnMsg = 'this Password field is required';
@@ -3470,19 +3602,19 @@ $translateProvider.translations("tr", {
 					                                												}
 	                                										}
 		                              },
-		                                
+
 		                                {
-		                                	id 													: 'Email',  
-		                                	name 												: 'Email', 
-		                                	subtitle 										: 'Email', 
-		                                	group 											: 'input', 
-		                                	formlyType									: 'input', 
-		                                	formlySubtype 							: 'email', 
-		                                	formlyLabel 								: '', 
-		                                	formlyRequired 							: false, 
-		                                	formlyDesciption 						: '', 
-		                                	formlyOptions 							: [], 
-		                                	formlyExpressionProperties 	: {}, 
+		                                	id 													: 'Email',
+		                                	name 												: 'Email',
+		                                	subtitle 										: 'Email',
+		                                	group 											: 'input',
+		                                	formlyType									: 'input',
+		                                	formlySubtype 							: 'email',
+		                                	formlyLabel 								: '',
+		                                	formlyRequired 							: false,
+		                                	formlyDesciption 						: '',
+		                                	formlyOptions 							: [],
+		                                	formlyExpressionProperties 	: {},
 
 		                                	formlyValidators 						: {
 																	                                		emailShape : {
@@ -3497,38 +3629,38 @@ $translateProvider.translations("tr", {
 		                                	formlyValidation: {
 						                                		          messages: {
 																													            required: function(viewValue, modelValue, scope) {
-																													              		//return a required validation message : 
+																													              		//return a required validation message :
 																													              		//-> '<label as name> is required '
 																													              		//-> or if not exists or empty just 'this field is required'
-																													              		
+
 																													              		var defaultReturnMsg = 'this Email field is required';
 																													              		var returnMsg = (typeof scope.to.label !== 'undefined') ? ((scope.to.label !== '') ? scope.to.label + ' is required' : defaultReturnMsg) : defaultReturnMsg;
-																													              		//check if validation is really dued to require validation 
+																													              		//check if validation is really dued to require validation
 																													              		//and not another validation like emailShape validator
 																													              		if (scope.to.required) return returnMsg;
 																													            		}
 						                                												}
 		                                										}
 		                                },
-		                                
+
 		                                {
-		                                	id: 'Date',  
-		                                	name: 'Date', 
-		                                	subtitle: 'Date', 
-		                                	group: 'input', 
-		                                	formlyType: 'datepicker', 
-		                                	formlySubtype: '', 
-		                                	formlyLabel: '', 
-		                                	formlyRequired: false, 
-		                                	formlyDesciption: '', 
-		                                	formlyOptions: [], 
-		                                	datepickerPopup: 'dd-MMMM-yyyy', 
-		                                	formlyExpressionProperties: {}, 
-		                                	formlyValidators: {}, 
+		                                	id: 'Date',
+		                                	name: 'Date',
+		                                	subtitle: 'Date',
+		                                	group: 'input',
+		                                	formlyType: 'datepicker',
+		                                	formlySubtype: '',
+		                                	formlyLabel: '',
+		                                	formlyRequired: false,
+		                                	formlyDesciption: '',
+		                                	formlyOptions: [],
+		                                	datepickerPopup: 'dd-MMMM-yyyy',
+		                                	formlyExpressionProperties: {},
+		                                	formlyValidators: {},
 		                                	formlyValidation: {
 						                                		          messages: {
 																													            required: function(viewValue, modelValue, scope) {
-																													              		//return a required validation message : 
+																													              		//return a required validation message :
 																													              		//-> '<label as name> is required '
 																													              		//-> or if not exists or empty just 'this field is required'
 																													              		var defaultReturnMsg = 'this Date field is required';
@@ -3540,22 +3672,22 @@ $translateProvider.translations("tr", {
 		                                },
 
 		                                {
-		                                	id: 'Texarea', 
-		                                	name: 'Textarea', 
-		                                	subtitle: 'Textarea', 
-		                                	group: 'Textarea', 
-		                                	formlyType: 'textarea', 
-		                                	formlySubtype: '', 
-		                                	formlyLabel: '', 
-		                                	formlyRequired: false, 
-		                                	formlyDesciption: '', 
-		                                	formlyOptions: [], 
-		                                	formlyExpressionProperties: {}, 
-		                                	formlyValidators: {}, 
+		                                	id: 'Texarea',
+		                                	name: 'Textarea',
+		                                	subtitle: 'Textarea',
+		                                	group: 'Textarea',
+		                                	formlyType: 'textarea',
+		                                	formlySubtype: '',
+		                                	formlyLabel: '',
+		                                	formlyRequired: false,
+		                                	formlyDesciption: '',
+		                                	formlyOptions: [],
+		                                	formlyExpressionProperties: {},
+		                                	formlyValidators: {},
 		                                	formlyValidation: {
 						                                		          messages: {
 																													            required: function(viewValue, modelValue, scope) {
-																													              		//return a required validation message : 
+																													              		//return a required validation message :
 																													              		//-> '<label as name> is required '
 																													              		//-> or if not exists or empty just 'this field is required'
 																													              		var defaultReturnMsg = 'this Textarea field is required';
@@ -3567,24 +3699,24 @@ $translateProvider.translations("tr", {
 		                                },
 
 		                                {
-		                                	id: 'RichTextEditor', 
-		                                	name: 'RichTextEditor', 
-		                                	subtitle: 'RichTextEditor', 
-		                                	group: 'Textarea', 
-		                                	formlyType: 'richEditor', 
-		                                	formlySubtype: '', 
-		                                	formlyLabel: '', 
-		                                	formlyRequired: false, 
-		                                	formlyDesciption: '', 
-		                                	formlyOptions: [], 
-		                                	formlyExpressionProperties: {}, 
-		   
+		                                	id: 'RichTextEditor',
+		                                	name: 'RichTextEditor',
+		                                	subtitle: 'RichTextEditor',
+		                                	group: 'Textarea',
+		                                	formlyType: 'richEditor',
+		                                	formlySubtype: '',
+		                                	formlyLabel: '',
+		                                	formlyRequired: false,
+		                                	formlyDesciption: '',
+		                                	formlyOptions: [],
+		                                	formlyExpressionProperties: {},
+
 		                                	formlyValidators 						: {},
 
 		                                	formlyValidation: {
 						                                		          messages: {
 																													            required: function(viewValue, modelValue, scope) {
-																													              		//return a required validation message : 
+																													              		//return a required validation message :
 																													              		//-> '<label as name> is required '
 																													              		//-> or if not exists or empty just 'this field is required'
 																													              		var defaultReturnMsg = 'this RichTextEditor field is required';
@@ -3596,23 +3728,23 @@ $translateProvider.translations("tr", {
 		                                },
 
 		                                {
-		                                	id: 'Radio', 
-		                                	name: 'Radio', 
-		                                	subtitle: 'Radio', 
-		                                	options: [], 
-		                                	group: 'Radio', 
-		                                	formlyType: 'radio', 
-		                                	formlySubtype: '', 
-		                                	formlyLabel: '', 
-		                                	formlyRequired: false, 
-		                                	formlyDesciption: '' , 
-		                                	formlyOptions: [], 
-		                                	formlyExpressionProperties: {}, 
-		                                	formlyValidators: {}, 
+		                                	id: 'Radio',
+		                                	name: 'Radio',
+		                                	subtitle: 'Radio',
+		                                	options: [],
+		                                	group: 'Radio',
+		                                	formlyType: 'radio',
+		                                	formlySubtype: '',
+		                                	formlyLabel: '',
+		                                	formlyRequired: false,
+		                                	formlyDesciption: '' ,
+		                                	formlyOptions: [],
+		                                	formlyExpressionProperties: {},
+		                                	formlyValidators: {},
 	                                		formlyValidation: {
 					                                		          messages: {
 																												            required: function(viewValue, modelValue, scope) {
-																												              		//return a required validation message : 
+																												              		//return a required validation message :
 																												              		//-> '<label as name> is required '
 																												              		//-> or if not exists or empty just 'this field is required'
 																												              		var defaultReturnMsg = 'this Password field is required';
@@ -3624,22 +3756,22 @@ $translateProvider.translations("tr", {
 		                                },
 
 		                                {
-		                                	id: 'Checkbox', 
-		                                	name: 'Checkbox', 
-		                                	subtitle: 'Checkbox', 
-		                                	group: 'Checkbox', 
-		                                	formlyType: 'checkbox', 
-		                                	formlySubtype: '', 
-		                                	formlyLabel: '', 
-		                                	formlyRequired: false, 
-		                                	formlyDesciption: '', 
-		                                	formlyOptions: [], 
-		                                	formlyExpressionProperties: {}, 
-		                                	formlyValidators: {}, 
+		                                	id: 'Checkbox',
+		                                	name: 'Checkbox',
+		                                	subtitle: 'Checkbox',
+		                                	group: 'Checkbox',
+		                                	formlyType: 'checkbox',
+		                                	formlySubtype: '',
+		                                	formlyLabel: '',
+		                                	formlyRequired: false,
+		                                	formlyDesciption: '',
+		                                	formlyOptions: [],
+		                                	formlyExpressionProperties: {},
+		                                	formlyValidators: {},
 	                                		formlyValidation: {
 					                                		          messages: {
 																												            required: function(viewValue, modelValue, scope) {
-																												              		//return a required validation message : 
+																												              		//return a required validation message :
 																												              		//-> '<label as name> is required '
 																												              		//-> or if not exists or empty just 'this field is required'
 																												              		var defaultReturnMsg = 'this Checkbox field is required';
@@ -3651,23 +3783,23 @@ $translateProvider.translations("tr", {
 		                                },
 
 		                                {
-		                                	id: 'BasicSelect', 
-		                                	name: 'Basic select', 
+		                                	id: 'BasicSelect',
+		                                	name: 'Basic select',
 		                                	subtitle: 'Basic select',
-		                                	options: [], 
-		                                	group: 'Select', 
-		                                	formlyType: 'basicSelect', 
-		                                	formlySubtype: '', 
-		                                	formlyLabel: '', 
-		                                	formlyRequired: false, 
-		                                	formlyDesciption: '', 
-		                                	formlyOptions: [], 
-		                                	formlyExpressionProperties: {}, 
-		                                	formlyValidators: {}, 
+		                                	options: [],
+		                                	group: 'Select',
+		                                	formlyType: 'basicSelect',
+		                                	formlySubtype: '',
+		                                	formlyLabel: '',
+		                                	formlyRequired: false,
+		                                	formlyDesciption: '',
+		                                	formlyOptions: [],
+		                                	formlyExpressionProperties: {},
+		                                	formlyValidators: {},
 	                                		formlyValidation: {
 					                                		          messages: {
 																												            required: function(viewValue, modelValue, scope) {
-																												              		//return a required validation message : 
+																												              		//return a required validation message :
 																												              		//-> '<label as name> is required '
 																												              		//-> or if not exists or empty just 'this field is required'
 																												              		var defaultReturnMsg = 'this Basic select field is required';
@@ -3679,23 +3811,23 @@ $translateProvider.translations("tr", {
 		                                },
 
 		                                {
-		                                	id: 'GroupedSelect', 
-		                                	name: 'Grouped Select', 
+		                                	id: 'GroupedSelect',
+		                                	name: 'Grouped Select',
 		                                	subtitle: 'Grouped Select',
-		                                	options: [], 
-		                                	group: 'Select', 
-		                                	formlyType: 'groupedSelect', 
-		                                	formlySubtype: '', 
-		                                	formlyLabel: '', 
-		                                	formlyRequired: false, 
+		                                	options: [],
+		                                	group: 'Select',
+		                                	formlyType: 'groupedSelect',
+		                                	formlySubtype: '',
+		                                	formlyLabel: '',
+		                                	formlyRequired: false,
 		                                	formlyDesciption: '',
-		                                	formlyOptions: [], 
-		                                	formlyExpressionProperties: {}, 
-		                                	formlyValidators: {}, 
+		                                	formlyOptions: [],
+		                                	formlyExpressionProperties: {},
+		                                	formlyValidators: {},
 	                                		formlyValidation: {
 					                                		          messages: {
 																												            required: function(viewValue, modelValue, scope) {
-																												              		//return a required validation message : 
+																												              		//return a required validation message :
 																												              		//-> '<label as name> is required '
 																												              		//-> or if not exists or empty just 'this field is required'
 																												              		var defaultReturnMsg = 'this Grouped Select field is required';
@@ -3710,16 +3842,16 @@ $translateProvider.translations("tr", {
 		                      selectedControl : 'none' ,
 		                      temporyConfig : {
 		                                        selectedControl: 'none',
-		                                        formlyLabel: 'label', 
-		                                        formlyRequired: false, 
+		                                        formlyLabel: 'label',
+		                                        formlyRequired: false,
 		                                        formlyDesciption: '',
 		                                        formlyPlaceholder: '',
 		                                        formlyOptions : [],
 																	          //expressions/validation fields
 																	          formlyExpressionProperties: {},
 																	          formlyValidators: {},
-																	          formlyValidation: {}                                        
-		                                      } 
+																	          formlyValidation: {}
+		                                      }
 
 		    };
 
@@ -3727,33 +3859,33 @@ $translateProvider.translations("tr", {
 		  	angular.copy(newNyaSelectObj, nyaSelectObj);
 		    return true;
 		  }
-			
+
 			function filterDisabledControl(nyaSelectObj){
 				var listAllEnabledControl = easyFormSteWayConfig.getListEnabledControl();
 				var filteredNyaList = [];
-				
+
 				angular.forEach(listAllEnabledControl, function(enabledControl){
-					
+
 					angular.forEach(nyaSelectObj.controls, function(nyaControl){
-											
+
 						if ((nyaControl.id === enabledControl.name) &&
 								(enabledControl.enabled === true)) {
 							filteredNyaList = filteredNyaList.concat(nyaControl);
 						}
-						
+
 					});
-					
+
 				});
 				return filteredNyaList;
 			}
 		  /**
-		   * data passed back to parent controller 
+		   * data passed back to parent controller
 		   * after control being finsihed editing in modal
 		   */
 		  function returnControlFromAddCtrlModalModel(CtrlModalModel){
 
 		    var modelToReturn = {
-		          selectedControl:'none', 
+		          selectedControl:'none',
 		          formlyType : 'none',
 		          formlySubtype: 'none',
 		          formlyLabel: '',
@@ -3783,11 +3915,11 @@ $translateProvider.translations("tr", {
 		        modelToReturn.formlyValidators 						= angular.copy(CtrlModalModel.controls[i].formlyValidators);
 		        modelToReturn.formlyValidation 						= angular.copy(CtrlModalModel.controls[i].formlyValidation);
 
-		        //particular properties 
+		        //particular properties
 		        //datetpicker format
 		        if (CtrlModalModel.controls[i].formlyType === 'datepicker') {
-					modelToReturn.datepickerPopup 							= CtrlModalModel.controls[i].datepickerPopup;   
-					  	
+					modelToReturn.datepickerPopup 							= CtrlModalModel.controls[i].datepickerPopup;
+
 		        }
 		      }
 		    }
@@ -3806,17 +3938,17 @@ $translateProvider.translations("tr", {
 		        if (configurationObj.lines[i].columns[j].control.key === thisKey) {
 		          isUnique = false;
 		        }
-		          
+
 		      }
-		      
+
 		    }
 
-		    return isUnique;  
-		  }  
+		    return isUnique;
+		  }
 
 		}
 
-})(); 
+})();
 
 /**
  *  ------------------------------------------------------

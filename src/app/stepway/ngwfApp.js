@@ -2,11 +2,11 @@
  *  -----------------------------------------------------------------------
  *  application module of the step way version of easy form generator
  *  -----------------------------------------------------------------------
- *  
- *   
+ *
+ *
  *     - this version is production friendly -
  *
- * 
+ *
  * ——————————————————————————————————————————————
  * MIT (2015) - Erwan Datin (MacKentoch)
  * https://github.com/MacKentoch/easyFormGenerator
@@ -20,14 +20,15 @@
     .module('eda.easyformGen.stepway', ['ngwfApp']);
 
   angular
-    .module('ngwfApp', [  
+    .module('ngwfApp', [
       'ngwfApp.core',
       'eda.easyFormGenerator.translate',
       'eda.easyFormSteWayConfigProvider',
       'ngwfApp.controllers',
-      'ngwfApp.services', 
+      'ngwfApp.services',
       'ngwfApp.filters',
-      'ngwfApp.directives'
+      'ngwfApp.directives',
+      'ngFileUpload',
     ])
     .value('easyFormGenVersion', 'v1.0.33')
     .config(formlyConfigFct)
@@ -36,13 +37,13 @@
 
     easyFromConfigFct.$inject = ['easyFormSteWayConfigProvider'];
     function easyFromConfigFct(easyFormSteWayConfigProvider){
-      //enable/disable easy form modal animation 
+      //enable/disable easy form modal animation
       //HERE : disabling animation due to angular bootstrap backdrop bug with angular >= 1.4
       easyFormSteWayConfigProvider.setModalAnimation(false);
-      
+
       //disable control example :
       //easyFormSteWayConfigProvider.disableControl('TextInput');
-      
+
       //enable control example :
       //easyFormSteWayConfigProvider.enableControl('TextInput');
 
@@ -50,7 +51,7 @@
       //console.info('lang = ' + easyFormSteWayConfigProvider.getCurrentLanguage());
       //example set currrent language
       //easyFormSteWayConfigProvider.setLanguage('fr');
-      
+
     }
 
 
@@ -58,7 +59,7 @@
     formlyConfigFct.$inject = ['formlyConfigProvider'];
     function formlyConfigFct(formlyConfigProvider){
       //////////////////////////////
-      // CONFIG HERE (formly...)              
+      // CONFIG HERE (formly...)
       /////////////////////////////
       formlyConfigProvider.setType(
         {
@@ -84,13 +85,13 @@
         }
       );
 
-      var basicSelectTemplate =   ' <ol   class="nya-bs-select col-sm-12 col-xs-12 col-md-12 col-lg12" ' + 
-                    '   ng-model="model[options.key || index]"  ' + 
-                      '   id="{{id}}"  ' + 
-                      '   disabled="options.templateOptions.options.length === 0"> ' + 
-                      '   <li class="nya-bs-option" nya-bs-option="option in options.templateOptions.options"> ' + 
-                      '     <a>{{option.name}}</a> ' + 
-                      '   </li> ' + 
+      var basicSelectTemplate =   ' <ol   class="nya-bs-select col-sm-12 col-xs-12 col-md-12 col-lg12" ' +
+                    '   ng-model="model[options.key || index]"  ' +
+                      '   id="{{id}}"  ' +
+                      '   disabled="options.templateOptions.options.length === 0"> ' +
+                      '   <li class="nya-bs-option" nya-bs-option="option in options.templateOptions.options"> ' +
+                      '     <a>{{option.name}}</a> ' +
+                      '   </li> ' +
                       ' </ol>     ' ;
 
      formlyConfigProvider.setType(
@@ -107,7 +108,7 @@
                    '       disabled="options.templateOptions.options.length === 0">' +
                                  '       <li nya-bs-option="option in  options.templateOptions.options group by option.group"  ' +
                                  '       >' +
-                                 '         <span class="dropdown-header">{{$group}}</span>' + 
+                                 '         <span class="dropdown-header">{{$group}}</span>' +
                                  '         <a>' +
                                  '           <span>{{option.name}}</span>' +
                                  '           <span class="glyphicon glyphicon-ok check-mark"></span>' +
@@ -122,6 +123,81 @@
         }
       );
 
+      var fileUploadTemplate = '<div>' +
+      '<div class="input-group">' +
+      '<input type="text" class="form-control" ngf-select ng-model="model[options.key || index]" name="{{id}}" />' +
+      '<span class="input-group-addon" ng-click="startUpload()"><i class="glyphicon glyphicon-upload"></i></span>' +
+      '</div>' +
+      '</div>';
+
+     formlyConfigProvider.setType(
+        {
+          name: 'fileupload',
+          template: fileUploadTemplate,
+          wrapper: ['bootstrapLabel', 'bootstrapHasError'],
+          controller: /* @ngInject */ function($scope, Upload) {
+            $scope.startUpload = startUpload;
+            $scope.options.data.startUpload = startUpload;
+
+            function startUpload() {
+              if (!$scope.fileInputEl.val()) {
+                notify.warning('File Not Uploaded', 'Please choose a file to upload');
+                return undefined;
+              }
+              $scope.uploading = upload({
+                url: $scope.to.url,
+                method: 'POST',
+                headers: {
+                  'Accept': '*/*'
+                },
+                data: {
+                  file: $scope.fileInputEl
+                }
+              }).then(function successHandler(response) {
+                // Remove any previous errors
+                $scope.to.fileUploadErrors = null;
+                var successMessage = $scope.to.successMessage;
+                if (_.isFunction(successMessage)) {
+                  successMessage = successMessage(response);
+                }
+                if (successMessage !== null) {
+                  notify.success(successMessage || 'File uploaded successfully');
+                }
+                if ($scope.to.onSuccess) {
+                  return $scope.to.onSuccess(response, $scope.options, $scope);
+                } else {
+                  return response;
+                }
+              }, function errorHandler(response) {
+                if (response.data && _.isArray(response.data) && !_.isUndefined(response.data[0].lineNumber)) {
+                  $scope.to.fileUploadErrors = response.data;
+                  var errorMessage = $scope.to.errorMessage;
+                  if (_.isFunction(errorMessage)) {
+                    errorMessage = errorMessage(response);
+                  }
+                  if (errorMessage) {
+                    notify.error('Upload failed', errorMessage);
+                  }
+                } else {
+                  delete response.config.azData.notifications.error;
+                  NotifyInterceptor.responseError(response);
+                }
+                throw response;
+              });
+
+              return $scope.uploading;
+            }
+          },
+          link: function(scope, el) {
+            var int = setInterval(function() {
+              scope.fileInputEl = el.find('input[type=file]');
+              if (scope.fileInputEl.length) {
+                clearInterval(int);
+              }
+            }, 10);
+          }
+        }
+      );
      ////////////////////////////
      // angular UI date picker
      ////////////////////////////
@@ -168,7 +244,7 @@
         ngModelAttrs[camelize(binding)] = {bound: binding};
       });
 
-    
+
 
       formlyConfigProvider.setType({
         name: 'datepicker',
@@ -180,7 +256,7 @@
             $event.stopPropagation();
             $scope.opened = true;
           };
-         
+
          }],
         defaultOptions: {
           ngModelAttrs: ngModelAttrs,
@@ -190,14 +266,14 @@
               onClick: function(options, scope) {
                 options.templateOptions.isOpen = !options.templateOptions.isOpen;
               }
-            },       
+            },
             onFocus: function($viewValue, $modelValue, scope) {
               scope.to.isOpen = !scope.to.isOpen;
             },
             datepickerOptions: {}
           }
         }
-        
+
       });
 
 
@@ -233,7 +309,7 @@
         return string.replace(/^([A-Z])/, function(match, chr) {
           return chr ? chr.toLowerCase() : '';
         });
-      } 
+      }
 
     }
 

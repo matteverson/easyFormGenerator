@@ -11,12 +11,12 @@
 						<h5 class="greyText"><i class="fa fa-filter"></i>&nbsp; {{'SELECT_CTRL_IN_LIST' | translate}} :</h5>
 				</div>
 				<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
-				
+
 						<ol class="nya-bs-select col-xs-12 col-sm-12 col-md-12 col-lg-12" ng-model="modelNyaSelect" data-live-search="false">
 								<li nya-bs-option="option in nyaSelectFiltered.controls group by option.group">
 									<span class="dropdown-header greyText">{{$group}}</span> <!-- group header cannot be searched -->
 									<a ng-click="selectThisControl(option.id)">
-										<span>{{ option.name }}</span> 
+										<span>{{ option.name }}</span>
 										<span class="glyphicon glyphicon-ok check-mark"></span>
 									</a>
 								</li>
@@ -30,13 +30,13 @@
 
 
 		<div ng-switch on="nyaSelect.selectedControl">
-				
+
 				<div ng-switch-when="none">
 
 								<div class="row">
 										<div class="col-sm-12">
 												<h5 class="text-center texteRouge"> <i class="fa fa-arrow-up"></i>&nbsp; {{'SELECT_A_CTRL' | translate}}</h5>
-										</div>                
+										</div>
 								</div>
 				</div>
 
@@ -50,17 +50,17 @@
 												<div class="col-md-12">
 														<h5 class="greyText"><i class="fa fa-eye"></i>&nbsp; {{'PREVIEW_TAB' | translate}} :</h5>
 												</div>
-										</div> 
+										</div>
 										<hr/>
 
 										<div class="row">
 												<div class="col-sm-12">
 														<h5 class="text-center greyText">{{'COL_WILL_BE_BLANK' | translate}}</h5>
-												</div>                
+												</div>
 										</div>
 										</div>
 										</div>
-				</div>                
+				</div>
 
 				<div ng-switch-when="Header">
 								<!-- TextInput -->
@@ -71,15 +71,15 @@
 												<div class="col-md-12">
 														<h5 class="greyText"><i class="fa fa-eye"></i>&nbsp; {{'PREVIEW_TAB' | translate}} :</h5>
 												</div>
-										</div> 
+										</div>
 										<hr/>
 
 										<div class="row">
-				
+
 												<div class="col-md-12">
-														
+
 														<div class="form-group">
-																																	
+
 															<div class="">
 
 																<h2 class="text-center">{{nyaSelect.temporyConfig.formlyDesciption}}</h2>
@@ -89,8 +89,8 @@
 
 														</div>
 
-												</div>                    
-										</div> 
+												</div>
+										</div>
 									</div>
 								</div>
 
@@ -101,7 +101,7 @@
 												<div class="col-md-12">
 														<h5 class="greyText"><i class="fa fa-pencil-square-o"></i>&nbsp; {{'EDIT_PROPERTIES' | translate}} :</h5>
 												</div>
-										</div> 
+										</div>
 										<hr/>
 
 										<div class="marginTopFivepixels"></div>
@@ -116,7 +116,7 @@
 										</div>
 
 									</div>
-								</div> 
+								</div>
 				</div>
 
 				<div ng-switch-when="Subtitle">
@@ -128,15 +128,15 @@
 												<div class="col-md-12">
 														<h5 class="greyText"><i class="fa fa-eye"></i>&nbsp; {{'PREVIEW_TAB' | translate}} :</h5>
 												</div>
-										</div> 
+										</div>
 										<hr/>
 
 										<div class="row">
-				
+
 												<div class="col-md-12">
-														
+
 														<div class="form-group">
-																																	
+
 															<div class="">
 
 																<h4 class="text-center">{{nyaSelect.temporyConfig.formlyPlaceholder}}</h4>
@@ -146,8 +146,8 @@
 
 														</div>
 
-												</div>                    
-										</div> 
+												</div>
+										</div>
 									</div>
 								</div>
 
@@ -158,7 +158,7 @@
 												<div class="col-md-12">
 														<h5 class="greyText"><i class="fa fa-pencil-square-o"></i>&nbsp; {{'EDIT_PROPERTIES' | translate}} :</h5>
 												</div>
-										</div> 
+										</div>
 										<hr/>
 
 										<div class="marginTopFivepixels"></div>
@@ -173,8 +173,8 @@
 										</div>
 
 									</div>
-								</div> 
-				</div>                
+								</div>
+				</div>
 
 				<div ng-switch-when="TextInput">
 								<!-- TextInput -->
@@ -185,17 +185,17 @@
 												<div class="col-md-12">
 														<h5 class="greyText"><i class="fa fa-eye"></i>&nbsp; {{'PREVIEW_TAB' | translate}} :</h5>
 												</div>
-										</div> 
+										</div>
 										<hr/>
 
 										<div class="row">
-				
+
 												<div class="col-md-12">
-														
+
 														<div class="form-group">
 
 															<label for="inputText" class="control-label textControlLabel">{{nyaSelect.temporyConfig.formlyLabel}}<span ng-if="nyaSelect.temporyConfig.formlyRequired" class="textControlLabel">*</span></label>
-															
+
 															<div class="">
 																<input type="text" class="form-control" id="inputText" placeholder="{{nyaSelect.temporyConfig.formlyPlaceholder}}">
 																<p class="help-block">{{nyaSelect.temporyConfig.formlyDesciption}}</p>
@@ -203,8 +203,8 @@
 
 														</div>
 
-												</div>                    
-										</div> 
+												</div>
+										</div>
 									</div>
 								</div>
 
@@ -215,7 +215,7 @@
 												<div class="col-md-12">
 														<h5 class="greyText"><i class="fa fa-pencil-square-o"></i>&nbsp; {{'EDIT_PROPERTIES' | translate}} :</h5>
 												</div>
-										</div> 
+										</div>
 										<hr/>
 
 										<div class="row">
@@ -265,14 +265,14 @@
 										</div>
 
 									</div>
-								</div> 
+								</div>
 				</div>
 
-				<div ng-switch-when="Password">
-								<!-- password -->
+				<div ng-switch-when="FileUpload">
+								<!-- FileUpload -->
 								<div class="panel panel-default">
 										<div class="panel-body">
-										
+
 										<div class="row">
 												<div class="col-md-12">
 														<h5 class="greyText"><i class="fa fa-eye"></i>&nbsp; {{'PREVIEW_TAB' | translate}} :</h5>
@@ -280,10 +280,88 @@
 										</div>
 										<hr/>
 
-										<div class="row">    
+										<div class="row">
 
 												<div class="col-md-12">
-														
+
+														<div class="form-group">
+
+															<label for="inputText" class="control-label textControlLabel">{{nyaSelect.temporyConfig.formlyLabel}}<span ng-if="nyaSelect.temporyConfig.formlyRequired" class="textControlLabel">*</span></label>
+
+															<div class="input-group">
+																<input type="text" class="form-control" ngf-select ng-model="model[options.key || index]" name="{{id}}" />
+																<span class="input-group-addon"><i class="glyphicon glyphicon-upload"></i></span>
+															</div>
+																<p class="help-block">{{nyaSelect.temporyConfig.formlyDesciption}}</p>
+														</div>
+
+												</div>
+										</div>
+									</div>
+								</div>
+
+								<div class="panel panel-default">
+										<div class="panel-body">
+
+										<div class="row">
+												<div class="col-md-12">
+														<h5 class="greyText"><i class="fa fa-pencil-square-o"></i>&nbsp; {{'EDIT_PROPERTIES' | translate}} :</h5>
+												</div>
+										</div>
+										<hr/>
+
+										<div class="row">
+														<div class="form-group">
+															<label for="inputTextLabelUpdate" class="col-lg-3 control-label greyText editPropertiesLabel">{{'LABEL_TEXT' | translate}} :</label>
+															<div class="col-lg-9">
+																<input type="text" class="form-control" ng-model="nyaSelect.temporyConfig.formlyLabel" id="inputTextLabelUpdate" placeholder="{{'ADD_EDIT_LABEL_HERE' | translate}}">
+															</div>
+														</div>
+										</div>
+
+										<div class="marginTopFivepixels"></div>
+
+										<div class="row">
+														<div class="form-group">
+															<label for="inputTextRequiredUpdate" class="col-lg-3 control-label greyText editPropertiesLabel">{{'REQUIRED' | translate}} :</label>
+															<div class="col-lg-9">
+																<div class="checkboxCssCorrection">&nbsp;</div>
+																<input type="checkbox" ng-model="nyaSelect.temporyConfig.formlyRequired" id="inputTextRequiredUpdate">
+															</div>
+														</div>
+										</div>
+
+										<div class="marginTopFivepixels"></div>
+
+										<div class="row">
+														<div class="form-group">
+															<label for="inputTextDescriptionUpdate" class="col-lg-3 control-label greyText editPropertiesLabel">{{'DESCRIPTION' | translate}} :</label>
+															<div class="col-lg-9">
+																<input type="text" class="form-control" ng-model="nyaSelect.temporyConfig.formlyDesciption" id="inputTextDescriptionUpdate" placeholder="{{'ADDEDIT_DESCRIPTION' | translate}}">
+															</div>
+														</div>
+										</div>
+
+									</div>
+								</div>
+				</div>
+
+				<div ng-switch-when="Password">
+								<!-- password -->
+								<div class="panel panel-default">
+										<div class="panel-body">
+
+										<div class="row">
+												<div class="col-md-12">
+														<h5 class="greyText"><i class="fa fa-eye"></i>&nbsp; {{'PREVIEW_TAB' | translate}} :</h5>
+												</div>
+										</div>
+										<hr/>
+
+										<div class="row">
+
+												<div class="col-md-12">
+
 														<div class="form-group">
 
 														<label for="inputPassword" class="control-label textControlLabel">{{nyaSelect.temporyConfig.formlyLabel}}<span ng-if="nyaSelect.temporyConfig.formlyRequired" class="textControlLabel">*</span></label>
@@ -297,11 +375,11 @@
 
 														</div>
 
-												</div>                    
+												</div>
 
-										</div> 
+										</div>
 									</div>
-								</div>  
+								</div>
 
 								<div class="panel panel-default">
 										<div class="panel-body">
@@ -310,7 +388,7 @@
 												<div class="col-md-12">
 														<h5 class="greyText"><i class="fa fa-pencil-square-o"></i>&nbsp; {{'EDIT_PROPERTIES' | translate}} :</h5>
 												</div>
-										</div> 
+										</div>
 										<hr/>
 
 										<div class="row">
@@ -360,14 +438,14 @@
 										</div>
 
 									</div>
-								</div> 
-				</div>   
+								</div>
+				</div>
 
 				<div ng-switch-when="Email">
 								<!-- password -->
 								<div class="panel panel-default">
 										<div class="panel-body">
-										
+
 										<div class="row">
 												<div class="col-md-12">
 														<h5 class="greyText"><i class="fa fa-eye"></i>&nbsp; {{'PREVIEW_TAB' | translate}} :</h5>
@@ -375,10 +453,10 @@
 										</div>
 										<hr/>
 
-										<div class="row">    
+										<div class="row">
 
 												<div class="col-md-12">
-														
+
 														<div class="form-group">
 
 														<label for="inputEmail" class="control-label textControlLabel">{{nyaSelect.temporyConfig.formlyLabel}}<span ng-if="nyaSelect.temporyConfig.formlyRequired" class="textControlLabel">*</span></label>
@@ -392,11 +470,11 @@
 
 														</div>
 
-												</div>                    
+												</div>
 
-										</div> 
+										</div>
 									</div>
-								</div>  
+								</div>
 
 								<div class="panel panel-default">
 										<div class="panel-body">
@@ -405,7 +483,7 @@
 												<div class="col-md-12">
 														<h5 class="greyText"><i class="fa fa-pencil-square-o"></i>&nbsp; {{'EDIT_PROPERTIES' | translate}} :</h5>
 												</div>
-										</div> 
+										</div>
 										<hr/>
 
 										<div class="row">
@@ -455,8 +533,8 @@
 										</div>
 
 									</div>
-								</div> 
-				</div> 
+								</div>
+				</div>
 
 				<div ng-switch-when="Date">
 								<!-- datetimepicker (input type date not ok in all browsers) -->
@@ -467,31 +545,31 @@
 												<div class="col-md-12">
 														<h5 class="greyText"><i class="fa fa-eye"></i>&nbsp; {{'PREVIEW_TAB' | translate}} :</h5>
 												</div>
-										</div> 
+										</div>
 										<hr/>
 
 										<div class="row">
-				
+
 												<div class="col-md-12">
-														
+
 														<div class="form-group">
 
 															<label for="inputDate" class="control-label textControlLabel">{{nyaSelect.temporyConfig.formlyLabel}}<span ng-if="nyaSelect.temporyConfig.formlyRequired" class="textControlLabel">*</span></label>
-															
+
 															<div class="">
-																
+
 						<div class="input-group" >
 							<span class="input-group-addon"><i class="glyphicon glyphicon-calendar"></i></span>
-							
+
 							<input type="text" class="form-control" datepicker-popup="{{nyaSelect.temporyConfig.datepickerPopup}}" ng-model="demodt.dt" is-open="demodt.opened" min-date="demodt.minDate" max-date="'2099-12-31'" datepicker-options="dateOptions" date-disabled="disabled(date, mode)"  close-text="Close" ng-click="open($event)" />
 						</div>
 
-									</p>         
+									</p>
 																<p class="help-block">{{nyaSelect.temporyConfig.formlyDesciption}}</p>
 															</div>
 														</div>
-												</div>                    
-										</div> 
+												</div>
+										</div>
 									</div>
 								</div>
 
@@ -502,7 +580,7 @@
 												<div class="col-md-12">
 														<h5 class="greyText"><i class="fa fa-pencil-square-o"></i>&nbsp; {{'EDIT_PROPERTIES' | translate}} :</h5>
 												</div>
-										</div> 
+										</div>
 										<hr/>
 
 										<div class="row">
@@ -555,8 +633,8 @@
 										</div>
 
 									</div>
-								</div> 
-				</div>                         
+								</div>
+				</div>
 
 				<div ng-switch-when="Texarea">
 								<!-- textarea -->
@@ -572,25 +650,25 @@
 										<hr/>
 
 										<div class="row">
-												
+
 												<div class="col-md-12">
-														
+
 														<div class="form-group">
 
 															<label for="textArea" class="control-label textControlLabel">{{nyaSelect.temporyConfig.formlyLabel}}<span ng-if="nyaSelect.temporyConfig.formlyRequired" class="textControlLabel">*</span></label>
 
 															<div class="">
-																<textarea class="form-control" ng-model="model[options.key]" rows="3" id="textArea"></textarea> 
-																<p class="help-block">{{nyaSelect.temporyConfig.formlyDesciption}}</p>          
+																<textarea class="form-control" ng-model="model[options.key]" rows="3" id="textArea"></textarea>
+																<p class="help-block">{{nyaSelect.temporyConfig.formlyDesciption}}</p>
 															</div>
 
-														</div>                    
+														</div>
 
-												</div>                    
+												</div>
 
-										</div> 
+										</div>
 									</div>
-								</div> 
+								</div>
 
 								<div class="panel panel-default">
 										<div class="panel-body">
@@ -599,7 +677,7 @@
 												<div class="col-md-12">
 														<h5 class="greyText"><i class="fa fa-pencil-square-o"></i>&nbsp; {{'EDIT_PROPERTIES' | translate}} :</h5>
 												</div>
-										</div> 
+										</div>
 										<hr/>
 
 										<div class="row">
@@ -636,8 +714,8 @@
 											</div>
 
 										</div>
-								</div> 
-				</div> 
+								</div>
+				</div>
 
 				<div ng-switch-when="RichTextEditor">
 								<!-- TextInput -->
@@ -648,26 +726,26 @@
 												<div class="col-md-12">
 														<h5 class="greyText"><i class="fa fa-eye"></i>&nbsp; {{'PREVIEW_TAB' | translate}} :</h5>
 												</div>
-										</div> 
+										</div>
 										<hr/>
 
 										<div class="row">
-				
+
 												<div class="col-md-12">
-														
+
 														<div class="form-group">
 
 															<label for="RichTextEditor" class="control-label textControlLabel">{{nyaSelect.temporyConfig.formlyLabel}}<span ng-if="nyaSelect.temporyConfig.formlyRequired" class="textControlLabel">*</span></label>
-															
+
 															<div class="">
-																																		
+
 																<text-angular ng-model="model[options.key]"></text-angular>
 																<p class="help-block">{{nyaSelect.temporyConfig.formlyDesciption}}</p>
 															</div>
 
 														</div>
-												</div>                    
-										</div> 
+												</div>
+										</div>
 									</div>
 								</div>
 
@@ -678,7 +756,7 @@
 												<div class="col-md-12">
 														<h5 class="greyText"><i class="fa fa-pencil-square-o"></i>&nbsp; {{'EDIT_PROPERTIES' | translate}} :</h5>
 												</div>
-										</div> 
+										</div>
 										<hr/>
 
 										<!-- required can't be applied to rich text editor (textAngular) right now -->
@@ -690,7 +768,7 @@
 																<input type="checkbox" ng-model="nyaSelect.temporyConfig.formlyRequired" id="inputTextRequiredUpdate">
 															</div>
 														</div>
-										</div>                            
+										</div>
 
 
 										<div class="marginTopFivepixels"></div>-->
@@ -707,8 +785,8 @@
 
 
 									</div>
-								</div> 
-				</div>                
+								</div>
+				</div>
 
 				<div ng-switch-when="Radio">
 								<!-- radios -->
@@ -719,15 +797,15 @@
 												<div class="col-md-12">
 														<h5 class="greyText"><i class="fa fa-eye"></i>&nbsp; {{'PREVIEW_TAB' | translate}} :</h5>
 												</div>
-										</div> 
-										<hr/>                           
+										</div>
+										<hr/>
 
 										<div class="row">
-												
+
 												<div class="col-md-12">
-														
+
 														<div class="form-group">
-															
+
 															<label for="basicSelect" class="control-label textControlLabel">{{nyaSelect.temporyConfig.formlyLabel}}<span ng-if="nyaSelect.temporyConfig.formlyRequired" class="textControlLabel">*</span></label>
 
 															<div class="">
@@ -741,11 +819,11 @@
 																<p class="help-block">{{nyaSelect.temporyConfig.formlyDesciption}}</p>
 
 															</div>
-														</div>                            
+														</div>
 
-												</div>                    
+												</div>
 
-										</div> 
+										</div>
 									</div>
 								</div>
 
@@ -756,12 +834,12 @@
 												<div class="col-md-12">
 														<h5 class="greyText"><i class="fa fa-pencil-square-o"></i>&nbsp; {{'EDIT_PROPERTIES' | translate}} :</h5>
 												</div>
-										</div> 
+										</div>
 										<hr/>
 
 										<div class="row">
-												<div class="col-lg-3 col-md-3">                                       
-													<label for="radioRowCollection" class=" control-label greyText editPropertiesLabel">{{'ADD_NEW_RADIO' | translate}} :</label>  
+												<div class="col-lg-3 col-md-3">
+													<label for="radioRowCollection" class=" control-label greyText editPropertiesLabel">{{'ADD_NEW_RADIO' | translate}} :</label>
 												</div>
 										</div>
 
@@ -784,20 +862,20 @@
 
 
 										<div class="row">
-												<div class="col-lg-3 col-md-3">                                       
-													<label for="radioRowCollection" class=" control-label greyText editPropertiesLabel">{{'EDIT_REMOVE_RADIO' | translate}} :</label>  
+												<div class="col-lg-3 col-md-3">
+													<label for="radioRowCollection" class=" control-label greyText editPropertiesLabel">{{'EDIT_REMOVE_RADIO' | translate}} :</label>
 												</div>
 										</div>
 										<div class="row">
 														<div class="form-group">
 
 														<div class-"col-lg-12 col-md-12 col-sm-12 col-xs-12">
-																
+
 																<div class="container">
 
 																		<div ng-show="radioRowCollection.rows.length === 0">
 																				<h5 class="text-center greyText"><em>- {{'NO_RADIO_ADD_NEW' | translate}} -</em></h5>
-																		</div>  
+																		</div>
 
 
 																		<table ng-if="radioRowCollection.rows.length > 0" class="table table-striped">
@@ -815,19 +893,19 @@
 																						<th st-ratio="25"></th>
 																				</tr>
 																				</thead>
-																				<tbody>  
+																				<tbody>
 																						<tr ng-repeat="radioRow in radioRowCollection.rows | filter:radioFilter as radioRow">
 																								<td st-ratio="20">{{$index}}</td>
 																								<td st-ratio="55">{{radioRow.option}}</td>
 																								<td st-ratio="25">
-																									
+
 																										<div class="pull-right">
 																												<button class="btn btn-primary" ng-click="upThisRadioRow($index)"><i class="fa fa-arrow-up"></i></button>
-																												
-																												<button class="btn btn-primary" ng-click="downThisRadioRow($index)"><i class="fa fa-arrow-down"></i></button>    
+
+																												<button class="btn btn-primary" ng-click="downThisRadioRow($index)"><i class="fa fa-arrow-down"></i></button>
 
 																												<button class="btn btn-danger" ng-click="removeRadioRow($index)"><i class="fa fa-trash-o"></i></button>
-																											</div>   
+																											</div>
 
 																								</td>
 																						</tr>
@@ -843,7 +921,7 @@
 
 
 										<div class="marginTopFivepixels"></div>
-										
+
 
 										<div class="row">
 														<div class="form-group">
@@ -878,7 +956,7 @@
 										</div>
 
 									</div>
-								</div> 
+								</div>
 				</div>
 
 				<div ng-switch-when="Checkbox">
@@ -891,32 +969,32 @@
 												<div class="col-md-12">
 														<h5 class="greyText"><i class="fa fa-eye"></i>&nbsp; {{'PREVIEW_TAB' | translate}} :</h5>
 												</div>
-										</div> 
-										<hr/> 
+										</div>
+										<hr/>
 
 										<div class="row">
-												
+
 												<div class="col-md-12">
-														
+
 																<div class="form-group">
 
-																	<div class="col-md-12">                                
+																	<div class="col-md-12">
 																		<div class="checkbox">
 																			<label>
 																				<input type="checkbox" id="checkBox"> <span class="blackText">{{nyaSelect.temporyConfig.formlyLabel}}</span><span ng-if="nyaSelect.temporyConfig.formlyRequired" class="textControlLabel">*</span>
 																			</label>
-																			
+
 																		</div>
 																		<p class="help-block">{{nyaSelect.temporyConfig.formlyDesciption}}</p>
 																	</div>
 
-																</div>                   
+																</div>
 
-												</div>                    
+												</div>
 
-										</div> 
+										</div>
 									</div>
-								</div> 
+								</div>
 
 								<div class="panel panel-default">
 										<div class="panel-body">
@@ -925,7 +1003,7 @@
 												<div class="col-md-12">
 														<h5 class="greyText"><i class="fa fa-pencil-square-o"></i>&nbsp; {{'EDIT_PROPERTIES' | translate}} :</h5>
 												</div>
-										</div> 
+										</div>
 										<hr/>
 
 										<div class="row">
@@ -961,7 +1039,7 @@
 										</div>
 
 									</div>
-								</div> 
+								</div>
 				</div>
 
 				<div ng-switch-when="BasicSelect">
@@ -974,7 +1052,7 @@
 												<div class="col-md-12">
 														<h5 class="greyText"><i class="fa fa-eye"></i>&nbsp; {{'PREVIEW_TAB' | translate}} :</h5>
 												</div>
-										</div> 
+										</div>
 										<hr/>
 
 
@@ -997,8 +1075,8 @@
 															</div>
 
 														</div>
-												</div>                    
-										</div> 
+												</div>
+										</div>
 									</div>
 								</div>
 
@@ -1009,13 +1087,13 @@
 												<div class="col-md-12">
 														<h5 class="greyText"><i class="fa fa-pencil-square-o"></i>&nbsp; {{'EDIT_PROPERTIES' | translate}} :</h5>
 												</div>
-										</div> 
+										</div>
 										<hr/>
 
 
 										<div class="row">
-												<div class="col-lg-3 col-md-3">                                       
-													<label for="basicSelectRowCollection" class=" control-label greyText editPropertiesLabel">{{'ADD_NEW_OPTIONS' | translate}} :</label>  
+												<div class="col-lg-3 col-md-3">
+													<label for="basicSelectRowCollection" class=" control-label greyText editPropertiesLabel">{{'ADD_NEW_OPTIONS' | translate}} :</label>
 												</div>
 										</div>
 
@@ -1034,11 +1112,11 @@
 
 														</div>
 												</div>
-										</div>                            
+										</div>
 
 										<div class="row">
-												<div class="col-lg-3 col-md-3">                                       
-													<label  class=" control-label greyText editPropertiesLabel">{{'EDIT_REMOVE_OPTIONS' | translate}} :</label>  
+												<div class="col-lg-3 col-md-3">
+													<label  class=" control-label greyText editPropertiesLabel">{{'EDIT_REMOVE_OPTIONS' | translate}} :</label>
 												</div>
 										</div>
 										<div class="row">
@@ -1049,7 +1127,7 @@
 
 																		<div ng-if="basicSelectRowCollection.rows.length === 0">
 																				<h5 class="text-center greyText"><em>- {{'NO_OPTION_ADD_NEW' | translate}} -</em></h5>
-																		</div>  
+																		</div>
 
 																		<table ng-if="basicSelectRowCollection.rows.length > 0" class="table table-striped">
 																				<thead>
@@ -1071,14 +1149,14 @@
 																						<td st-ratio="20">{{$index}}</td>
 																						<td st-ratio="55">{{basicSelectRow.option}}</td>
 																						<td st-ratio="25">
-																							
+
 																								<div class="pull-right">
 																										<button class="btn btn-primary" ng-click="upThisRow($index)"><i class="fa fa-arrow-up"></i></button>
-																										
-																										<button class="btn btn-primary" ng-click="downThisRow($index)"><i class="fa fa-arrow-down"></i></button>    
+
+																										<button class="btn btn-primary" ng-click="downThisRow($index)"><i class="fa fa-arrow-down"></i></button>
 
 																										<button class="btn btn-danger" ng-click="removeRow($index)"><i class="fa fa-trash-o"></i></button>
-																									</div>   
+																									</div>
 
 																						</td>
 																				</tr>
@@ -1099,13 +1177,13 @@
 																<input type="checkbox" ng-model="nyaSelect.temporyConfig.formlyRequired" id="inputTextRequiredUpdate">
 															</div>
 														</div>
-										</div> -->                           
+										</div> -->
 
 
-										
+
 
 										<div class="marginTopFivepixels"></div>
-										
+
 
 										<div class="row">
 														<div class="form-group">
@@ -1117,13 +1195,13 @@
 										</div>
 
 									</div>
-								</div> 
-				</div>                
+								</div>
+				</div>
 
 
 				<!-- grouped selects -->
 				<div ng-switch-when="GroupedSelect">
-								
+
 								<div class="panel panel-default">
 										<div class="panel-body">
 
@@ -1132,17 +1210,17 @@
 												<div class="col-md-12">
 														<h5 class="greyText"><i class="fa fa-eye"></i>&nbsp; {{'PREVIEW_TAB' | translate}} :</h5>
 												</div>
-										</div> 
+										</div>
 										<hr/>
 
 
 										<div class="row">
-												
+
 												<div class="col-md-12">
-														
+
 														<div class="form-group">
-															
-														
+
+
 															<label for="select" class="control-label textControlLabel">{{nyaSelect.temporyConfig.formlyLabel}}<span ng-if="nyaSelect.temporyConfig.formlyRequired" class="textControlLabel">*</span></label>
 
 															<div class="">
@@ -1151,7 +1229,7 @@
 
 																<li nya-bs-option="groupedSelectRow in groupedSelectRowCollection.rows group by groupedSelectRow.group" value="$index"
 																>
-																	<span class="dropdown-header">{{groupedSelectRow.group}}</span> 
+																	<span class="dropdown-header">{{groupedSelectRow.group}}</span>
 																	<a>
 																		<span>{{groupedSelectRow.option}}</span>
 																		<span class="glyphicon glyphicon-ok check-mark"></span>
@@ -1164,9 +1242,9 @@
 															</div>
 														</div>
 
-												</div>                    
+												</div>
 
-										</div> 
+										</div>
 									</div>
 								</div>
 
@@ -1177,13 +1255,13 @@
 												<div class="col-md-12">
 														<h5 class="greyText"><i class="fa fa-pencil-square-o"></i>&nbsp; {{'EDIT_PROPERTIES' | translate}} :</h5>
 												</div>
-										</div> 
+										</div>
 										<hr/>
 
 
 										<div class="row">
-												<div class="col-lg-3 col-md-3">                                       
-													<label for="groupedSelectRowCollection" class=" control-label greyText editPropertiesLabel">{{'ADD_NEW_OPTIONS' | translate}} :</label>  
+												<div class="col-lg-3 col-md-3">
+													<label for="groupedSelectRowCollection" class=" control-label greyText editPropertiesLabel">{{'ADD_NEW_OPTIONS' | translate}} :</label>
 												</div>
 										</div>
 
@@ -1202,12 +1280,12 @@
 
 														</div>
 												</div>
-										</div> 
+										</div>
 
 
 										<div class="row">
-												<div class="col-lg-3 col-md-3">                                       
-													<label for="groupedSelectRowCollection" class=" control-label greyText editPropertiesLabel">{{'ADD_NEW_GROUPS' | translate}} :</label>  
+												<div class="col-lg-3 col-md-3">
+													<label for="groupedSelectRowCollection" class=" control-label greyText editPropertiesLabel">{{'ADD_NEW_GROUPS' | translate}} :</label>
 												</div>
 										</div>
 
@@ -1229,8 +1307,8 @@
 										</div>
 
 										<div class="row">
-												<div class="col-lg-3 col-md-3">                                       
-													<label  class=" control-label greyText editPropertiesLabel">{{'EDIT_GROUPS_OPTIONS' | translate}} :</label>  
+												<div class="col-lg-3 col-md-3">
+													<label  class=" control-label greyText editPropertiesLabel">{{'EDIT_GROUPS_OPTIONS' | translate}} :</label>
 												</div>
 										</div>
 
@@ -1242,7 +1320,7 @@
 
 																		<div ng-if="groupedSelectRowCollection.rows.length === 0">
 																				<h5 class="text-center greyText"><em>- {{'NO_OPTION_ADD_NEW' | translate}} -</em></h5>
-																		</div>  
+																		</div>
 
 																		<table ng-if="groupedSelectRowCollection.rows.length > 0" class="table table-striped">
 																				<thead>
@@ -1265,8 +1343,8 @@
 																				<tr ng-repeat="groupedSelectRow in groupedSelectRowCollection.rows | filter:groupedSelectFilter as oneGroupedSelectRow">
 																						<td st-ratio="20">{{$index}}</td>
 																						<td st-ratio="25">
-																								<div ng-if="groupSelectGroupClick.showList === true">          
-																								
+																								<div ng-if="groupSelectGroupClick.showList === true">
+
 																								<div ng-if="GroupedSelectGroups.list.length === 0">
 																										<p class="text-left noGroupText">- {{'NO_GROUP_ADD_NEW' | translate}} -</p>
 																								</div>
@@ -1277,9 +1355,9 @@
 																											<li class="nya-bs-option" nya-bs-option="GroupedSelectGroup in GroupedSelectGroups.list" value="GroupedSelectGroup">
 																												<a>{{GroupedSelectGroup}}</a>
 																											</li>
-																										</ol> 
+																										</ol>
 																								</div>
-																								
+
 																								</div>
 																								<div ng-if="groupSelectGroupClick.showList === false">
 																								{{oneGroupedSelectRow.group}}
@@ -1287,17 +1365,17 @@
 																						</td>
 																						<td st-ratio="30">{{oneGroupedSelectRow.option}}</td>
 																						<td st-ratio="25">
-																							
+
 																								<div class="pull-right">
 																										<button class="btn btn-primary" ng-click="upThisGroupedSelectRow($index)"><i class="fa fa-arrow-up"></i></button>
-																										
-																										<button class="btn btn-primary" ng-click="downThisGroupedSelectRow($index)"><i class="fa fa-arrow-down"></i></button>  
+
+																										<button class="btn btn-primary" ng-click="downThisGroupedSelectRow($index)"><i class="fa fa-arrow-down"></i></button>
 
 																										<button class="btn btn-warning" ng-click="showGroupListToChoose()"><i class="fa fa-pencil-square-o"></i> </button>
-																											
+
 
 																										<button class="btn btn-danger" ng-click="removeGroupedSelectRow($index)"><i class="fa fa-trash-o"></i></button>
-																									</div>   
+																									</div>
 
 																						</td>
 																				</tr>
@@ -1322,8 +1400,8 @@
 										</div>
 
 									</div>
-								</div>                                              
-				</div>   
+								</div>
+				</div>
 
 		</div>
 </div>
@@ -1332,4 +1410,3 @@
 		<button class="btn btn-primary" ng-class="{'disabled': nyaSelect.selectedControl === 'none'}" ng-click="ok()">{{'OK' | translate}}</button>
 		<button class="btn btn-warning" ng-click="cancel()">{{'CANCEL' | translate}}</button>
 </div>
-
