@@ -2,9 +2,9 @@
  *  -----------------------------------------------------------------------
  *  config module of easy form viewer
  *  -----------------------------------------------------------------------
- *  
- *   
- * 
+ *
+ *
+ *
  * ——————————————————————————————————————————————
  * MIT (2015) - Erwan Datin (MacKentoch)
  * https://github.com/MacKentoch/easyFormGenerator
@@ -12,15 +12,15 @@
 **/
 ;(function(){
 	'use strict';
-	
+
 	angular
 		.module('eda.easyFormViewer')
 		.config(configFct);
-    
+
 		configFct.$inject = ['formlyConfigProvider'];
 		function configFct(formlyConfigProvider){
 	     //////////////////////////////
-      // CONFIG HERE (formly...)              
+      // CONFIG HERE (formly...)
       /////////////////////////////
       formlyConfigProvider.setType(
         {
@@ -46,13 +46,13 @@
         }
       );
 
-      var basicSelectTemplate =   ' <ol   class="nya-bs-select col-sm-12 col-xs-12 col-md-12 col-lg12" ' + 
-                    '   ng-model="model[options.key || index]"  ' + 
-                      '   id="{{id}}"  ' + 
-                      '   disabled="options.templateOptions.options.length === 0"> ' + 
-                      '   <li class="nya-bs-option" nya-bs-option="option in options.templateOptions.options"> ' + 
-                      '     <a>{{option.name}}</a> ' + 
-                      '   </li> ' + 
+      var basicSelectTemplate =   ' <ol   class="nya-bs-select col-sm-12 col-xs-12 col-md-12 col-lg12" ' +
+                    '   ng-model="model[options.key || index]"  ' +
+                      '   id="{{id}}"  ' +
+                      '   disabled="options.templateOptions.options.length === 0"> ' +
+                      '   <li class="nya-bs-option" nya-bs-option="option in options.templateOptions.options"> ' +
+                      '     <a>{{option.name}}</a> ' +
+                      '   </li> ' +
                       ' </ol>     ' ;
 
      formlyConfigProvider.setType(
@@ -69,7 +69,7 @@
                    '       disabled="options.templateOptions.options.length === 0">' +
                                  '       <li nya-bs-option="option in  options.templateOptions.options group by option.group"  ' +
                                  '       >' +
-                                 '         <span class="dropdown-header">{{$group}}</span>' + 
+                                 '         <span class="dropdown-header">{{$group}}</span>' +
                                  '         <a>' +
                                  '           <span>{{option.name}}</span>' +
                                  '           <span class="glyphicon glyphicon-ok check-mark"></span>' +
@@ -83,7 +83,66 @@
           template: groupedSelectTemplate
         }
       );
+			var fileUploadTemplate = '<div>' +
+			'<div class="input-group">' +
+			'<input type="text" ng-class="[\'form-control\', uploadStatus]" ngf-select ng-model="file" name="{{id}}" placeholder="{{fileName}}"/>' +
+			'<span class="input-group-addon" ng-click="startUpload()"><i ng-class="[\'glyphicon\', \'glyphicon-upload\', uploadStatus]"></i></span>' +
+			'</div>' +
+			'</div>';
 
+			formlyConfigProvider.setType(
+				{
+					name: 'fileupload',
+					template: fileUploadTemplate,
+					wrapper: ['bootstrapLabel', 'bootstrapHasError'],
+					controller: /* @ngInject */ ['$scope', 'Upload', function($scope, Upload) {
+						$scope.startUpload = startUpload;
+						$scope.options.data.startUpload = startUpload;
+						$scope.fileName = '';
+						$scope.done = false;
+
+						$scope.policy = 'ewogICJleHBpcmF0aW9uIjogIjIwMjAtMDEtMDFUMDA6MDA6MDBaIiwKICAiY29uZGl0aW9ucyI6IFsKICAgIHsiYnVja2V0IjogInRoaW5rLWtpZHMtY2VydC11cGxvYWRzIn0sCiAgICBbInN0YXJ0cy13aXRoIiwgIiRrZXkiLCAiIl0sCiAgICB7ImFjbCI6ICJwcml2YXRlIn0sCiAgICBbInN0YXJ0cy13aXRoIiwgIiRDb250ZW50LVR5cGUiLCAiIl0sCiAgICBbInN0YXJ0cy13aXRoIiwgIiRmaWxlbmFtZSIsICIiXSwKICAgIFsiY29udGVudC1sZW5ndGgtcmFuZ2UiLCAwLCA1MjQyODgwMDBdCiAgXQp9';
+						$scope.signature = '597I+rBb9xhAZcCtmPW/RhWW7rM=';
+
+						function startUpload() {
+							if (!$scope.file || $scope.done) {
+								return undefined;
+							}
+							var file = $scope.file;
+
+						  Upload.upload({
+								url: 'https://think-kids-cert-uploads.s3.amazonaws.com/',
+								method: 'POST',
+								skipAuthorization: true,
+								data: {
+									key: file.name, // the key to store the file on S3, could be file name or customized
+				          AWSAccessKeyId: 'AKIAJHXKTQJH7P4IOMDA',
+				          acl: 'private', // sets the access to the uploaded file in the bucket: private, public-read, ...
+				          policy: $scope.policy, // base64-encoded json policy (see article below)
+				          signature: $scope.signature, // base64-encoded signature based on policy string (see article below)
+				          'Content-Type': file.type !== '' ? file.type : 'application/octet-stream', // content type of the file (NotEmpty)
+				          filename: file.name, // this is needed for Flash polyfill IE8-9
+				          file: file
+								}
+							}).then(function (resp) {
+								console.log('Success ' + resp.config.data.file.name + ' uploaded.');
+								console.log(resp);
+								$scope.uploadStatus = 'upload-complete';
+								$scope.done = true;
+								$scope.fileName = resp.config.data.file.name;
+								$scope.model[$scope.options.key || $scope.index] = resp.config.data.file.name;
+							}, function (resp) {
+								console.log('Upload error');
+								scope.uploadStatus = 'upload-error';
+								console.log(resp);
+							}, function (evt) {
+								var progressPercentage = parseInt(100.0 * evt.loaded / evt.total);
+								console.log('progress: ' + progressPercentage + '% ' + evt.config.data.file.name);
+							});
+						}
+					}]
+				}
+			);
      ////////////////////////////
      // angular UI date picker
      ////////////////////////////
@@ -130,7 +189,7 @@
         ngModelAttrs[camelize(binding)] = {bound: binding};
       });
 
-    
+
 
       formlyConfigProvider.setType({
         name: 'datepicker',
@@ -142,7 +201,7 @@
             $event.stopPropagation();
             $scope.opened = true;
           };
-         
+
          }],
         defaultOptions: {
           ngModelAttrs: ngModelAttrs,
@@ -152,14 +211,14 @@
               onClick: function(options, scope) {
                 options.templateOptions.isOpen = !options.templateOptions.isOpen;
               }
-            },       
+            },
             onFocus: function($viewValue, $modelValue, scope) {
               scope.to.isOpen = !scope.to.isOpen;
             },
             datepickerOptions: {}
           }
         }
-        
+
       });
 
 
@@ -195,9 +254,9 @@
         return string.replace(/^([A-Z])/, function(match, chr) {
           return chr ? chr.toLowerCase() : '';
         });
-      } 
+      }
 
     }
 
-	
+
 })();

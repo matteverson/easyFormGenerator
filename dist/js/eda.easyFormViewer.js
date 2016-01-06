@@ -11,11 +11,11 @@
  *  -----------------------------------------------------------------------
  *  application module of easy form viewer
  *  -----------------------------------------------------------------------
- *  
- *   
- *     
  *
- * 
+ *
+ *
+ *
+ *
  * ——————————————————————————————————————————————
  * MIT (2015) - Erwan Datin (MacKentoch)
  * https://github.com/MacKentoch/easyFormGenerator
@@ -23,27 +23,29 @@
 **/
 ;(function(){
 	'use strict';
-	
+
 	angular
 		.module('eda.easyFormViewer', [
-			'textAngular',  
-			'formly',  
+			'textAngular',
+			'formly',
 			'ngAnimate',
-			'formlyBootstrap', 
-			'ui.bootstrap', 
-			'nya.bootstrap.select', 
+			'formlyBootstrap',
+			'ui.bootstrap',
+			'nya.bootstrap.select',
 			'eda.easyFormViewer.Directive',
-			'eda.modelsTranslator.Service'		
+			'eda.modelsTranslator.Service',
+			'ngFileUpload'		
 		]);
-	
+
 })();
+
 /**
  *  -----------------------------------------------------------------------
  *  config module of easy form viewer
  *  -----------------------------------------------------------------------
- *  
- *   
- * 
+ *
+ *
+ *
  * ——————————————————————————————————————————————
  * MIT (2015) - Erwan Datin (MacKentoch)
  * https://github.com/MacKentoch/easyFormGenerator
@@ -51,15 +53,15 @@
 **/
 ;(function(){
 	'use strict';
-	
+
 	angular
 		.module('eda.easyFormViewer')
 		.config(configFct);
-    
+
 		configFct.$inject = ['formlyConfigProvider'];
 		function configFct(formlyConfigProvider){
 	     //////////////////////////////
-      // CONFIG HERE (formly...)              
+      // CONFIG HERE (formly...)
       /////////////////////////////
       formlyConfigProvider.setType(
         {
@@ -85,13 +87,13 @@
         }
       );
 
-      var basicSelectTemplate =   ' <ol   class="nya-bs-select col-sm-12 col-xs-12 col-md-12 col-lg12" ' + 
-                    '   ng-model="model[options.key || index]"  ' + 
-                      '   id="{{id}}"  ' + 
-                      '   disabled="options.templateOptions.options.length === 0"> ' + 
-                      '   <li class="nya-bs-option" nya-bs-option="option in options.templateOptions.options"> ' + 
-                      '     <a>{{option.name}}</a> ' + 
-                      '   </li> ' + 
+      var basicSelectTemplate =   ' <ol   class="nya-bs-select col-sm-12 col-xs-12 col-md-12 col-lg12" ' +
+                    '   ng-model="model[options.key || index]"  ' +
+                      '   id="{{id}}"  ' +
+                      '   disabled="options.templateOptions.options.length === 0"> ' +
+                      '   <li class="nya-bs-option" nya-bs-option="option in options.templateOptions.options"> ' +
+                      '     <a>{{option.name}}</a> ' +
+                      '   </li> ' +
                       ' </ol>     ' ;
 
      formlyConfigProvider.setType(
@@ -108,7 +110,7 @@
                    '       disabled="options.templateOptions.options.length === 0">' +
                                  '       <li nya-bs-option="option in  options.templateOptions.options group by option.group"  ' +
                                  '       >' +
-                                 '         <span class="dropdown-header">{{$group}}</span>' + 
+                                 '         <span class="dropdown-header">{{$group}}</span>' +
                                  '         <a>' +
                                  '           <span>{{option.name}}</span>' +
                                  '           <span class="glyphicon glyphicon-ok check-mark"></span>' +
@@ -122,7 +124,66 @@
           template: groupedSelectTemplate
         }
       );
+			var fileUploadTemplate = '<div>' +
+			'<div class="input-group">' +
+			'<input type="text" ng-class="[\'form-control\', uploadStatus]" ngf-select ng-model="file" name="{{id}}" placeholder="{{fileName}}"/>' +
+			'<span class="input-group-addon" ng-click="startUpload()"><i ng-class="[\'glyphicon\', \'glyphicon-upload\', uploadStatus]"></i></span>' +
+			'</div>' +
+			'</div>';
 
+			formlyConfigProvider.setType(
+				{
+					name: 'fileupload',
+					template: fileUploadTemplate,
+					wrapper: ['bootstrapLabel', 'bootstrapHasError'],
+					controller: /* @ngInject */ ['$scope', 'Upload', function($scope, Upload) {
+						$scope.startUpload = startUpload;
+						$scope.options.data.startUpload = startUpload;
+						$scope.fileName = '';
+						$scope.done = false;
+
+						$scope.policy = 'ewogICJleHBpcmF0aW9uIjogIjIwMjAtMDEtMDFUMDA6MDA6MDBaIiwKICAiY29uZGl0aW9ucyI6IFsKICAgIHsiYnVja2V0IjogInRoaW5rLWtpZHMtY2VydC11cGxvYWRzIn0sCiAgICBbInN0YXJ0cy13aXRoIiwgIiRrZXkiLCAiIl0sCiAgICB7ImFjbCI6ICJwcml2YXRlIn0sCiAgICBbInN0YXJ0cy13aXRoIiwgIiRDb250ZW50LVR5cGUiLCAiIl0sCiAgICBbInN0YXJ0cy13aXRoIiwgIiRmaWxlbmFtZSIsICIiXSwKICAgIFsiY29udGVudC1sZW5ndGgtcmFuZ2UiLCAwLCA1MjQyODgwMDBdCiAgXQp9';
+						$scope.signature = '597I+rBb9xhAZcCtmPW/RhWW7rM=';
+
+						function startUpload() {
+							if (!$scope.file || $scope.done) {
+								return undefined;
+							}
+							var file = $scope.file;
+
+						  Upload.upload({
+								url: 'https://think-kids-cert-uploads.s3.amazonaws.com/',
+								method: 'POST',
+								skipAuthorization: true,
+								data: {
+									key: file.name, // the key to store the file on S3, could be file name or customized
+				          AWSAccessKeyId: 'AKIAJHXKTQJH7P4IOMDA',
+				          acl: 'private', // sets the access to the uploaded file in the bucket: private, public-read, ...
+				          policy: $scope.policy, // base64-encoded json policy (see article below)
+				          signature: $scope.signature, // base64-encoded signature based on policy string (see article below)
+				          'Content-Type': file.type !== '' ? file.type : 'application/octet-stream', // content type of the file (NotEmpty)
+				          filename: file.name, // this is needed for Flash polyfill IE8-9
+				          file: file
+								}
+							}).then(function (resp) {
+								console.log('Success ' + resp.config.data.file.name + ' uploaded.');
+								console.log(resp);
+								$scope.uploadStatus = 'upload-complete';
+								$scope.done = true;
+								$scope.fileName = resp.config.data.file.name;
+								$scope.model[$scope.options.key || $scope.index] = resp.config.data.file.name;
+							}, function (resp) {
+								console.log('Upload error');
+								scope.uploadStatus = 'upload-error';
+								console.log(resp);
+							}, function (evt) {
+								var progressPercentage = parseInt(100.0 * evt.loaded / evt.total);
+								console.log('progress: ' + progressPercentage + '% ' + evt.config.data.file.name);
+							});
+						}
+					}]
+				}
+			);
      ////////////////////////////
      // angular UI date picker
      ////////////////////////////
@@ -169,7 +230,7 @@
         ngModelAttrs[camelize(binding)] = {bound: binding};
       });
 
-    
+
 
       formlyConfigProvider.setType({
         name: 'datepicker',
@@ -181,7 +242,7 @@
             $event.stopPropagation();
             $scope.opened = true;
           };
-         
+
          }],
         defaultOptions: {
           ngModelAttrs: ngModelAttrs,
@@ -191,14 +252,14 @@
               onClick: function(options, scope) {
                 options.templateOptions.isOpen = !options.templateOptions.isOpen;
               }
-            },       
+            },
             onFocus: function($viewValue, $modelValue, scope) {
               scope.to.isOpen = !scope.to.isOpen;
             },
             datepickerOptions: {}
           }
         }
-        
+
       });
 
 
@@ -234,22 +295,23 @@
         return string.replace(/^([A-Z])/, function(match, chr) {
           return chr ? chr.toLowerCase() : '';
         });
-      } 
+      }
 
     }
 
-	
+
 })();
+
 angular.module("eda.easyFormViewer").run(["$templateCache", function($templateCache) {$templateCache.put("eda.easyFormViewer.Template.html","<div class=easyFormViewer><form ng-submit=vm.onSubmit() name=vm.form><formly-form model=vm.model fields=vm.fields form=vm.form><div class=pull-right><button type=submit class=\"btn btn-primary\" ng-disabled=vm.form.$invalid ng-click=vm.edaSubmitThisDataModel();>{{vm.submitText}}</button> <button type=button class=\"btn btn-primary\" ng-click=vm.edaCancelEvent();>{{vm.cancelText}}</button></div></formly-form></form></div>");}]);
 /**
  *  -----------------------------------------------------------------------
  *   easy form viewer directive
  *  -----------------------------------------------------------------------
- *  
- *   
- *     
  *
- * 
+ *
+ *
+ *
+ *
  * ——————————————————————————————————————————————
  * MIT (2015) - Erwan Datin (MacKentoch)
  * https://github.com/MacKentoch/easyFormGenerator
@@ -257,64 +319,64 @@ angular.module("eda.easyFormViewer").run(["$templateCache", function($templateCa
 **/
 (function(){
 	'use strict';
-	
+
 	angular
-		.module('eda.easyFormViewer.Directive', [])
+		.module('eda.easyFormViewer.Directive', ['ngFileUpload'])
 		.directive('edaEasyFormViewer', edaEasyFormViewer);
-		
+
 		edaEasyFormViewer.$inject = ['modelsTranslator'];
-		
+
 		function edaEasyFormViewer(modelsTranslator){
 			//directive's controller injection is here (before return directive) = to avoid minification errors
 			edaEasyFormViewerCtrl.$inject = [];
-			
+
 			var directive = {
 				restrict : 'E',
 				scope : {
-					
+
           edaEasyFormViewerDataModel 										: '=?',
 					edaEasyFormViewerEasyFormGeneratorFieldsModel : '=?',
-					
+
 					edaEasyFormViewerSubmitButtonText 						: '@?',
 					edaEasyFormViewerCancelButtonText 						: '@?',
-					
+
           edaEasyFormViewerSubmitFormEvent  						: '&?',
 					edaEasyFormViewerCancelFormEvent							: '&?'
         },
 				replace 			: false,
-				
+
 				controller		: edaEasyFormViewerCtrl,
 				controllerAs 	: 'vm',
 				templateUrl 	: 'eda.easyFormViewer.Template.html',
-				
+
 				link : linkFct
 			};
 			return directive;
-			
-			
+
+
 			/**
 			 * directive's link function
 			 */
 			function linkFct(scope, element, attrs){
-				
+
 				scope.vm.model 				= {};
 				scope.vm.fields 			= loadFieldsModel();
 				scope.vm.submitText 	= scope.edaEasyFormViewerSubmitButtonText || 'Submit';
-				scope.vm.cancelText 	= scope.edaEasyFormViewerCancelButtonText || 'Cancel';	
-								
+				scope.vm.cancelText 	= scope.edaEasyFormViewerCancelButtonText || 'Cancel';
+
 				scope.$watch(fieldsModelToWatch, 		fieldsModelWatcher, 	true);
 				scope.$watch(dataModelToWatch,			dataModelWatcher,			true);
 				scope.$watch(submitBtnTextToWatch, 	submitBtnTextWatcher);
 				scope.$watch(cancelBtnTextToWatch, 	cancelBtnTextWatcher);
 				scope.$watch(submitEventToWatch, 		submitEventWatcher);
 				scope.$watch(cancelEventToWatch, 		cancelEventWatcher);
-				
-				
+
+
 				function dataModelToWatch(){
 					return scope.vm.model;
 				}
-				
-				
+
+
 				function fieldsModelToWatch(){
 					return scope.edaEasyFormViewerEasyFormGeneratorFieldsModel;
 				}
@@ -322,39 +384,39 @@ angular.module("eda.easyFormViewer").run(["$templateCache", function($templateCa
 				function submitBtnTextToWatch(){
 					return scope.edaEasyFormViewerSubmitButtonText;
 				}
-				
+
 				function cancelBtnTextToWatch(){
 					return scope.edaEasyFormViewerCancelButtonText;
 				}
-				
+
 				function submitEventToWatch(){
 					return scope.vm.hasJustSumitted;
 				}
-				
+
 				function cancelEventToWatch(){
 					return scope.vm.hasJustCancelled;
-				}				
-				
-				function fieldsModelWatcher(newFieldsModel, oldFieldsModel){					
+				}
+
+				function fieldsModelWatcher(newFieldsModel, oldFieldsModel){
 					scope.vm.fields = loadExistingConfigurationModel(newFieldsModel);
 				}
-				
+
 				function submitBtnTextWatcher(newSubmitBtntext, oldSubmitBtntext){
 					if (newSubmitBtntext !== oldSubmitBtntext) {
-						scope.vm.submitText 	= newSubmitBtntext || 'Submit';	
-					}					
-				}				
-			
+						scope.vm.submitText 	= newSubmitBtntext || 'Submit';
+					}
+				}
+
 				function cancelBtnTextWatcher(newCancelBtntext, oldCancelBtntext){
 					if (newCancelBtntext !== oldCancelBtntext) {
-						scope.vm.cancelText 	= newCancelBtntext || 'Submit';	
-					}					
-				}	
-				
+						scope.vm.cancelText 	= newCancelBtntext || 'Submit';
+					}
+				}
+
 				function dataModelWatcher(newDataModel, PreiousDataModel){
 					scope.edaEasyFormViewerDataModel = newDataModel;
-				}						
-			
+				}
+
 				function submitEventWatcher(newSubmitEvent, oldSubmitEvent){
 					if (newSubmitEvent === true) {
 							if (angular.isFunction(scope.edaEasyFormViewerSubmitFormEvent)) {
@@ -362,46 +424,46 @@ angular.module("eda.easyFormViewer").run(["$templateCache", function($templateCa
 								scope.edaEasyFormViewerSubmitFormEvent({ dataModelSubmitted : _dataModelSubmitted });
 							}
 					}
-					scope.vm.hasJustSumitted = false;					
-				}			
-			
+					scope.vm.hasJustSumitted = false;
+				}
+
 				function cancelEventWatcher(newCancelEvent, oldCancelEvent){
 					if (newCancelEvent === true) {
 							if (angular.isFunction(scope.edaEasyFormViewerCancelFormEvent)) {
 								scope.edaEasyFormViewerCancelFormEvent();
 							}
 					}
-					scope.vm.hasJustCancelled = false;					
-				}				
-			
+					scope.vm.hasJustCancelled = false;
+				}
+
 				/**
 				 * TODO : check if formly or easy form generato fields model
-				 * 
+				 *
 				 * by default or if both -> easy for generator is chosen
 				 */
 				function loadFieldsModel(){
-					
+
 					var initialFieldsModel = angular
 																		.isArray(scope.edaEasyFormViewerEasyFormGeneratorFieldsModel) ?
 						//translate easy form generator to formly fields model
 						loadExistingConfigurationModel(scope.edaEasyFormViewerEasyFormGeneratorFieldsModel)
 						: {};
-					
+
 					return initialFieldsModel;
 				}
-				
+
         function loadExistingConfigurationModel(loadedFieldModel){
-          
+
           if(angular.isArray(loadedFieldModel)){
-            var configlines           = returnAttributeConfigurationLinesIfNotEmpty(loadedFieldModel); 
-						var formlyFieldsModel 		= [];          
-            
+            var configlines           = returnAttributeConfigurationLinesIfNotEmpty(loadedFieldModel);
+						var formlyFieldsModel 		= [];
+
 						scope.configurationLoaded = {};
-            
+
             modelsTranslator.bindConfigurationLines(scope.configurationLoaded,configlines);
             /**
              * rebind special control properties :
-             * 
+             *
              * formly expression properties
              * Validators
              * Validation
@@ -409,31 +471,31 @@ angular.module("eda.easyFormViewer").run(["$templateCache", function($templateCa
             modelsTranslator.refreshControlFormlyExpressionProperties(scope.configurationLoaded);
             modelsTranslator.refreshControlFormlyValidators(scope.configurationLoaded);
             modelsTranslator.refreshControlFormlyValidation(scope.configurationLoaded);
-            
+
             //apply configuration model
             scope.configuration = angular.copy(scope.configurationLoaded);
-            
+
             //apply formly model
-            modelsTranslator.applyConfigurationToformlyModel(scope.configurationLoaded, formlyFieldsModel, scope.vm.model);          
-          	
+            modelsTranslator.applyConfigurationToformlyModel(scope.configurationLoaded, formlyFieldsModel, scope.vm.model);
+
 						return  formlyFieldsModel;
-          }  
-   
-			  } 
-	
-	
+          }
+
+			  }
+
+
 	        function returnAttributeConfigurationLinesIfNotEmpty(loadedFieldModel){
             var edaEasyFormGeneratorModelToReturn = (
-                angular.isArray(loadedFieldModel) ?  ( 
-                    loadedFieldModel.length > 0 ? 
-                      loadedFieldModel 
+                angular.isArray(loadedFieldModel) ?  (
+                    loadedFieldModel.length > 0 ?
+                      loadedFieldModel
                     : emptyEdaFieldsModel()
-                    ) 
+                    )
                 : emptyEdaFieldsModel()
             );
-             return edaEasyFormGeneratorModelToReturn;  
+             return edaEasyFormGeneratorModelToReturn;
           }
-          
+
           /**
            * empty fields model : to display at least an empty line
            * otherwise would look like ugly empty line like it were a bug
@@ -457,26 +519,26 @@ angular.module("eda.easyFormViewer").run(["$templateCache", function($templateCa
 						];
 						return emptyModel;
 					}
-          
+
           function returnAttributeDataModelIfNotEmpty(){
             var dataModelToReturn = (
-                angular.isArray(scope.edaEasyFormGeneratorModel.dataModel)   ?  ( 
-                    scope.edaEasyFormGeneratorModel.dataModel.length > 0 ? 
-                    scope.edaEasyFormGeneratorModel.dataModel 
+                angular.isArray(scope.edaEasyFormGeneratorModel.dataModel)   ?  (
+                    scope.edaEasyFormGeneratorModel.dataModel.length > 0 ?
+                    scope.edaEasyFormGeneratorModel.dataModel
                     : []
-                   ) 
+                   )
                 : []
             );
-             return dataModelToReturn;  
-          } 
-	
-	
-				
+             return dataModelToReturn;
+          }
+
+
+
 			}
-			
-			
-			
-			
+
+
+
+
 			/**
 			 * directive's controller : controllerAs syntax
 			 */
@@ -490,21 +552,22 @@ angular.module("eda.easyFormViewer").run(["$templateCache", function($templateCa
 				vm.hasJustCancelled 			= false;
 				vm.edaSubmitThisDataModel = edaSubmitThisDataModel;
 				vm.edaCancelEvent 				= edaCancelEvent;
-				
+
 				function edaSubmitThisDataModel(){
 					vm.hasJustSumitted = true;
 				}
 				function edaCancelEvent(){
 					vm.hasJustCancelled = true;
 				}
-											
+
 			}
-			
-			
-			
+
+
+
 		}
-		
+
 })();
+
 /**
  *  ------------------------------------------------------
  *  service : modelsTranslator
