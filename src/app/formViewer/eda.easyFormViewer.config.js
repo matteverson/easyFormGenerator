@@ -85,8 +85,8 @@
       );
 			var fileUploadTemplate = '<div>' +
 			'<div class="input-group">' +
-			'<input type="text" ng-class="[\'form-control\', uploadStatus]" ngf-select ng-model="file" name="{{id}}" placeholder="{{fileName}}"/>' +
-			'<span class="input-group-addon" ng-click="startUpload()"><i ng-class="[\'glyphicon\', \'glyphicon-upload\', uploadStatus]"></i></span>' +
+			'<div type="text" ng-class="[\'form-control\', uploadStatus]" ngf-select="readyUpload($file)" name="{{id}}">{{placeholder}}</div>' +
+			'<span class="input-group-addon" ng-click="startUpload()"><i ng-class="[\'glyphicon\', icon_class, uploadStatus]"></i></span>' +
 			'</div>' +
 			'</div>';
 
@@ -96,16 +96,22 @@
 					template: fileUploadTemplate,
 					wrapper: ['bootstrapLabel', 'bootstrapHasError'],
 					controller: /* @ngInject */ ['$scope', 'Upload', function($scope, Upload) {
+						$scope.placeholder = "Click here to choose a file";
 						$scope.startUpload = startUpload;
+						$scope.readyUpload = readyUpload;
 						$scope.options.data.startUpload = startUpload;
-						$scope.fileName = '';
-						$scope.done = false;
+						$scope.icon_class = 'glyphicon-upload';
 
 						$scope.policy = 'ewogICJleHBpcmF0aW9uIjogIjIwMjAtMDEtMDFUMDA6MDA6MDBaIiwKICAiY29uZGl0aW9ucyI6IFsKICAgIHsiYnVja2V0IjogInRoaW5rLWtpZHMtY2VydC11cGxvYWRzIn0sCiAgICBbInN0YXJ0cy13aXRoIiwgIiRrZXkiLCAiIl0sCiAgICB7ImFjbCI6ICJwcml2YXRlIn0sCiAgICBbInN0YXJ0cy13aXRoIiwgIiRDb250ZW50LVR5cGUiLCAiIl0sCiAgICBbInN0YXJ0cy13aXRoIiwgIiRmaWxlbmFtZSIsICIiXSwKICAgIFsiY29udGVudC1sZW5ndGgtcmFuZ2UiLCAwLCA1MjQyODgwMDBdCiAgXQp9';
 						$scope.signature = '597I+rBb9xhAZcCtmPW/RhWW7rM=';
 
+						function readyUpload(file) {
+								$scope.file = file;
+								$scope.placeholder = "Ready to upload";
+						}
+
 						function startUpload() {
-							if (!$scope.file || $scope.done) {
+							if (!$scope.file) {
 								return undefined;
 							}
 							var file = $scope.file;
@@ -128,8 +134,8 @@
 								console.log('Success ' + resp.config.data.file.name + ' uploaded.');
 								console.log(resp);
 								$scope.uploadStatus = 'upload-complete';
-								$scope.done = true;
-								$scope.fileName = resp.config.data.file.name;
+								$scope.icon_class = 'glyphicon-ok';
+								$scope.placeholder = resp.config.data.file.name;
 								$scope.model[$scope.options.key || $scope.index] = resp.config.data.file.name;
 							}, function (resp) {
 								console.log('Upload error');
